@@ -1,0 +1,82 @@
+[
+  {
+    "ContainingType": "WMS.Controllers.UserController",
+    "Method": "AddUser",
+    "RelativePath": "api/User/add-user",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "WMS.Models.Request.User.AddUserRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WMS.Controllers.UserController",
+    "Method": "Authen",
+    "RelativePath": "api/User/authentication",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "WMS.Models.Request.User.AuthenRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WMS.Controllers.UserController",
+    "Method": "DeleteUser",
+    "RelativePath": "api/User/delete-user{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WMS.Controllers.UserController",
+    "Method": "SearchUser",
+    "RelativePath": "api/User/search-user",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "WMS.Models.Request.User.GetUserRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WMS.Controllers.UserController",
+    "Method": "UpdateUser",
+    "RelativePath": "api/User/update-user",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "WMS.Models.Request.User.UpdateUserRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
