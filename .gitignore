@@ -1,0 +1,65 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+packages/
+!packages/build/
+
+# Logs
+*.log
+
+# Publish output
+publish/
+
+# Test results
+TestResults/
+
+# Entity Framework
+*.dbmdl
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Azure
+.publishsettings
+
+# Environment variables
+.env
+.env.*
+
+# Application secrets
+appsettings.Development.json
+secrets.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+coverage.xml
+*.coverage
+*.coveragexml
+
+# SonarQube
+.sonarqube/
+
+# Temporary files
+tmp/
+temp/
