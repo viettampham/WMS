@@ -15,6 +15,12 @@ public partial class LienVietStorageContext : DbContext
     {
     }
 
+    public virtual DbSet<Cont> Conts { get; set; }
+
+    public virtual DbSet<ContImage> ContImages { get; set; }
+
+    public virtual DbSet<PathConfig> PathConfigs { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -24,6 +30,36 @@ public partial class LienVietStorageContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Cont>(entity =>
+        {
+            entity.ToTable("Cont");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.NguoiKhaiBao).HasMaxLength(50);
+            entity.Property(e => e.SoBooking).HasMaxLength(50);
+            entity.Property(e => e.SoCont).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<ContImage>(entity =>
+        {
+            entity.ToTable("Cont_Image");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Idcont).HasColumnName("IDCont");
+            entity.Property(e => e.NguoiChup).HasMaxLength(50);
+            entity.Property(e => e.Path).HasMaxLength(200);
+            entity.Property(e => e.ThoiGianChup).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<PathConfig>(entity =>
+        {
+            entity.ToTable("Path_Config");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.PathLocation).HasMaxLength(300);
+            entity.Property(e => e.PathName).HasMaxLength(50);
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.RoleLevel).HasName("PK_Role_1");

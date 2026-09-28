@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using WMS.Models;
+using WMS.Models.Response.Cont;
 using WMS.Models.Response.User;
 namespace WMS.Mappings
 {
@@ -12,7 +13,9 @@ namespace WMS.Mappings
                 dest => dest.RoleLevel,
                 opt => opt.MapFrom(src => src.RoleLevelNavigation.RoleLevel)
                 );
-            
+
+            CreateMap<Cont, DeclareContResponse>();
+
         }
     }
 }
