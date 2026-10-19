@@ -11,5 +11,7 @@ namespace WMS.Services.impl
 
         Task<CommonResponseModel<ConImageResponse>> AddImageToCont(AddImageToContRequest req);
         Task<(byte[] FileBytes, string FileName)> DownloadFolder(int id);
+
+        Task<CommonResponseModel<byte[]>> ViewImage(int idImage);
     }
 }

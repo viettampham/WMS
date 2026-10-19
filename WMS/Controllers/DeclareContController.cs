@@ -45,5 +45,11 @@ namespace WMS.Controllers
                 result.FileName
             );
         }
+
+        [HttpGet("view-image")]
+        public async Task<IActionResult> ViewImage(int id) { 
+            var res = await _declareContService.ViewImage(id);
+            return Ok(res);
+        }
     }
 }

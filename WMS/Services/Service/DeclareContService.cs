@@ -275,5 +275,34 @@ namespace WMS.Services.Service
                     return res;
                 }
             }
+
+        public async Task<CommonResponseModel<byte[]>> ViewImage(int idImage)
+        {
+            CommonResponseModel<byte[]> res = new CommonResponseModel<byte[]>();
+            try {
+                ContImage item = await _context.ContImages.Where(x => x.Id == idImage).FirstOrDefaultAsync();
+                if (item == null)
+                {
+                    res.Message = "Không tồn tại ảnh";
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                PathConfig path = await _context.PathConfigs.Where(x=>x.PathName == "ContImage").FirstOrDefaultAsync();
+
+                string pathImage = Path.Combine(path.PathLocation, item.Path);
+                byte[] imageBytes = await File.ReadAllBytesAsync(pathImage);
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.Data= imageBytes;
+                return res;
+
+            } catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
         }
+    }
 }
