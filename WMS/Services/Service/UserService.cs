@@ -9,6 +9,7 @@ using System.Text;
 using WMS.Models;
 using WMS.Models.Request.User;
 using WMS.Models.Response.Common;
+using WMS.Models.Response.Role;
 using WMS.Models.Response.User;
 using WMS.Services.impl;
 
@@ -265,6 +266,28 @@ namespace WMS.Services.Service
                 res.Status = "SUCCESS";
                 return res;
             } catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<RoleResponse>> GetRole()
+        {
+            CommonResponseModel<RoleResponse> res = new CommonResponseModel<RoleResponse>();
+            try {
+                List<RoleResponse> lst = await _dbcontext.Roles.Select(x => new RoleResponse{ 
+                    Id = x.Id,
+                    RoleLevel = x.RoleLevel,
+                    RoleName = x.RoleName
+                }).ToListAsync();
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.ListData = lst;
+                return res;
+            }
+            catch (Exception ex) {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;

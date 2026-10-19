@@ -67,7 +67,7 @@ namespace WMS.Services.Service
                 {
                     await req.Image.CopyToAsync(stream);
                 }
-                string imagePath = Path.Combine("ContImages",fileName);
+                //string imagePath = Path.Combine("ContImages",fileName);
                 ContImage newi = new ContImage();
                 newi.Idcont = req.IDCont;
                 newi.Path = pathSave;

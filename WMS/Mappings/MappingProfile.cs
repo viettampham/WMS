@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using WMS.Models;
+using WMS.Models.Response.Audit;
 using WMS.Models.Response.Cont;
 using WMS.Models.Response.User;
 namespace WMS.Mappings
@@ -8,13 +9,18 @@ namespace WMS.Mappings
     {
         public MappingProfile()
         {
-            CreateMap<User, UserResponseModal>()
-                .ForMember(
-                dest => dest.RoleLevel,
-                opt => opt.MapFrom(src => src.RoleLevelNavigation.RoleLevel)
-                );
+            //CreateMap<User, UserResponseModal>()
+            //    .ForMember(
+            //    dest => dest.RoleLevel,
+            //    opt => opt.MapFrom(src => src.RoleLevelNavigation.RoleLevel)
+            //    );
+
+            CreateMap<User, UserResponseModal>();
 
             CreateMap<Cont, DeclareContResponse>();
+            CreateMap<Audit, AuditResponse>();
+            CreateMap<AuditDetail, AuditDetailResponse>();
+
 
         }
     }

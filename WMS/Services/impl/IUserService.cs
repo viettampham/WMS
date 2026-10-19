@@ -1,5 +1,7 @@
-﻿using WMS.Models.Request.User;
+﻿using WMS.Models;
+using WMS.Models.Request.User;
 using WMS.Models.Response.Common;
+using WMS.Models.Response.Role;
 using WMS.Models.Response.User;
 
 namespace WMS.Services.impl
@@ -11,5 +13,7 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<string>> UpdateUser(UpdateUserRequest request);
         Task<CommonResponseModel<string>> DeleteUser(int id);
         Task<CommonResponseModel<string>> Authentication(AuthenRequest request);
+
+        Task<CommonResponseModel<RoleResponse>> GetRole();
     }
 }

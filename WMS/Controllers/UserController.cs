@@ -46,5 +46,11 @@ namespace WMS.Controllers
             var res = await _userService.DeleteUser(id);
             return Ok(res);
         }
+
+        [HttpGet("get-role")]
+        public async Task<IActionResult> GetDSRole() {
+            var res = await _userService.GetRole();
+            return Ok(res);
+        }
     }
 }

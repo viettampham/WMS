@@ -15,9 +15,19 @@ public partial class LienVietStorageContext : DbContext
     {
     }
 
+    public virtual DbSet<Audit> Audits { get; set; }
+
+    public virtual DbSet<AuditDetail> AuditDetails { get; set; }
+
     public virtual DbSet<Cont> Conts { get; set; }
 
     public virtual DbSet<ContImage> ContImages { get; set; }
+
+    public virtual DbSet<DetechIssue> DetechIssues { get; set; }
+
+    public virtual DbSet<Location> Locations { get; set; }
+
+    public virtual DbSet<OperationStandard> OperationStandards { get; set; }
 
     public virtual DbSet<PathConfig> PathConfigs { get; set; }
 
@@ -30,6 +40,35 @@ public partial class LienVietStorageContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Audit>(entity =>
+        {
+            entity.ToTable("Audit");
+
+            entity.Property(e => e.Auditor).HasMaxLength(50);
+            entity.Property(e => e.DateCreate).HasColumnType("datetime");
+            entity.Property(e => e.Location).HasMaxLength(100);
+            entity.Property(e => e.Note).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<AuditDetail>(entity =>
+        {
+            entity.ToTable("AuditDetail");
+
+            entity.Property(e => e.Assignee).HasMaxLength(50);
+            entity.Property(e => e.DateCreate).HasColumnType("datetime");
+            entity.Property(e => e.DetechIssue).HasMaxLength(300);
+            entity.Property(e => e.DoneTime).HasColumnType("datetime");
+            entity.Property(e => e.DueDate).HasColumnType("datetime");
+            entity.Property(e => e.Evalue).HasMaxLength(10);
+            entity.Property(e => e.ImageAfter).HasMaxLength(300);
+            entity.Property(e => e.ImageBefore).HasMaxLength(300);
+            entity.Property(e => e.Location).HasMaxLength(50);
+            entity.Property(e => e.Note).HasMaxLength(300);
+            entity.Property(e => e.OperationStandard).HasMaxLength(300);
+            entity.Property(e => e.Status).HasMaxLength(20);
+        });
+
         modelBuilder.Entity<Cont>(entity =>
         {
             entity.ToTable("Cont");
@@ -49,6 +88,39 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.NguoiChup).HasMaxLength(50);
             entity.Property(e => e.Path).HasMaxLength(200);
             entity.Property(e => e.ThoiGianChup).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<DetechIssue>(entity =>
+        {
+            entity.ToTable("DetechIssue");
+
+            entity.Property(e => e.CodeIssue).HasMaxLength(10);
+            entity.Property(e => e.DetechIssue1)
+                .HasMaxLength(300)
+                .HasColumnName("DetechIssue");
+            entity.Property(e => e.Type).HasMaxLength(10);
+        });
+
+        modelBuilder.Entity<Location>(entity =>
+        {
+            entity.ToTable("Location");
+
+            entity.Property(e => e.Location1)
+                .HasMaxLength(50)
+                .HasColumnName("Location");
+            entity.Property(e => e.Note).HasMaxLength(300);
+        });
+
+        modelBuilder.Entity<OperationStandard>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_HangMuc");
+
+            entity.ToTable("OperationStandard");
+
+            entity.Property(e => e.Note).HasMaxLength(300);
+            entity.Property(e => e.OperationStandard1)
+                .HasMaxLength(300)
+                .HasColumnName("OperationStandard");
         });
 
         modelBuilder.Entity<PathConfig>(entity =>
