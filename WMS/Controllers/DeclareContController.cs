@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WMS.Models.Request.Cont;
+using WMS.Models.Response;
 using WMS.Models.Response.Cont;
 using WMS.Services.impl;
 
@@ -50,6 +51,51 @@ namespace WMS.Controllers
         public async Task<IActionResult> ViewImage(int id) { 
             var res = await _declareContService.ViewImage(id);
             return Ok(res);
+        }
+
+        [HttpPost("count")]
+        public async Task<IActionResult> Count(IFormFile file)
+        {
+            using var client = new HttpClient();
+
+            using var form = new MultipartFormDataContent();
+
+            using var stream = file.OpenReadStream();
+
+            var fileContent = new StreamContent(stream);
+
+            fileContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+            form.Add(fileContent, "file", file.FileName);
+
+            var response = await client.PostAsync(
+                "http://127.0.0.1:5000/count",
+                form
+            );
+
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            var result = System.Text.Json.JsonSerializer.Deserialize<CountResponse>(
+                json,
+                new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            // Tải ảnh từ FastAPI
+            var imageBytes = await client.GetByteArrayAsync(result!.image_url);
+
+            // Convert sang Base64
+            var imageBase64 = Convert.ToBase64String(imageBytes);
+
+            return Ok(new
+            {
+                count = result.Count,
+                imageBase64 = imageBase64
+            });
         }
     }
 }
