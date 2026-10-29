@@ -52,5 +52,11 @@ namespace WMS.Controllers
             var res = await _userService.GetRole();
             return Ok(res);
         }
+
+        [HttpGet("get-phongban")]
+        public async Task<IActionResult> GetPhongBan() {
+            var res = await _userService.GetPhongBan();
+            return Ok(res);
+        }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using WMS.Mappings;
 using WMS.Models;
+using WMS.Models.Request;
 using WMS.Services.impl;
 using WMS.Services.Service;
 
@@ -9,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<LienVietStorageContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.Configure<EmailSetting>(
+    builder.Configuration.GetSection("EmailSettings"));
 
 // Add services to the container.
 

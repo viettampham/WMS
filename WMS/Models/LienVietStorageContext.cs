@@ -23,6 +23,12 @@ public partial class LienVietStorageContext : DbContext
 
     public virtual DbSet<ContImage> ContImages { get; set; }
 
+    public virtual DbSet<CtpatCriterion> CtpatCriteria { get; set; }
+
+    public virtual DbSet<CtpatTopic> CtpatTopics { get; set; }
+
+    public virtual DbSet<Department> Departments { get; set; }
+
     public virtual DbSet<DetechIssue> DetechIssues { get; set; }
 
     public virtual DbSet<Location> Locations { get; set; }
@@ -66,6 +72,8 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.Location).HasMaxLength(50);
             entity.Property(e => e.Note).HasMaxLength(300);
             entity.Property(e => e.OperationStandard).HasMaxLength(300);
+            entity.Property(e => e.Owner).HasMaxLength(50);
+            entity.Property(e => e.PlanAction).HasMaxLength(300);
             entity.Property(e => e.Status).HasMaxLength(20);
         });
 
@@ -88,6 +96,32 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.NguoiChup).HasMaxLength(50);
             entity.Property(e => e.Path).HasMaxLength(200);
             entity.Property(e => e.ThoiGianChup).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<CtpatCriterion>(entity =>
+        {
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Criteria).HasMaxLength(300);
+            entity.Property(e => e.Idtopic).HasColumnName("IDTopic");
+            entity.Property(e => e.Note).HasMaxLength(300);
+        });
+
+        modelBuilder.Entity<CtpatTopic>(entity =>
+        {
+            entity.ToTable("CtpatTopic");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Note).HasMaxLength(100);
+            entity.Property(e => e.TakeOn).HasMaxLength(20);
+            entity.Property(e => e.Topic).HasMaxLength(300);
+        });
+
+        modelBuilder.Entity<Department>(entity =>
+        {
+            entity.ToTable("Department");
+
+            entity.Property(e => e.DepartmentName).HasMaxLength(50);
+            entity.Property(e => e.Note).HasMaxLength(100);
         });
 
         modelBuilder.Entity<DetechIssue>(entity =>
@@ -170,7 +204,6 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.PasswordHash).HasMaxLength(100);
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.Property(e => e.PhongBan).HasMaxLength(20);
-            entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.UserName).HasMaxLength(50);
 
             entity.HasOne(d => d.RoleLevelNavigation).WithMany(p => p.Users)

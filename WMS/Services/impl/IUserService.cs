@@ -15,5 +15,6 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<string>> Authentication(AuthenRequest request);
 
         Task<CommonResponseModel<RoleResponse>> GetRole();
+        Task<CommonResponseModel<Department>> GetPhongBan();
     }
 }

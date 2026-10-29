@@ -23,7 +23,7 @@ public partial class User
 
     public string Gender { get; set; } = null!;
 
-    public string? Status { get; set; }
+    public bool? Status { get; set; }
 
     public DateTime? LastLoginAt { get; set; }
 

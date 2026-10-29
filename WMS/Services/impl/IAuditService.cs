@@ -25,5 +25,10 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<AuditDetailResponse>> GetAuditDetailByID(int id);
 
         Task<CommonResponseModel<string>> AddImageAfterToAuditDetail(AddImageToAuditDetail req);
+
+        Task<CommonResponseModel<PagingResponse<AuditDetailResponse>>> GetAuditOwner(GetAuditOwner req);
+
+        Task<CommonResponseModel<string>> PhanCongTask(PhanCong req);
+        Task<string> TestSendMail();
     }
 }

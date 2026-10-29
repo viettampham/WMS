@@ -8,7 +8,7 @@
         public string PhoneNumber { get; set; }
         public string Address { get; set; }
         public string Gender { get; set; }
-        public string Status { get; set; }
+        public bool Status { get; set; }
         public string PhongBan { get; set; }
     }
 }

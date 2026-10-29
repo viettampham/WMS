@@ -11,7 +11,7 @@
         public string Avatar { get; set; }
         public DateOnly DateOfBirth { get; set; }
         public string Gender { get; set; }
-        public string Status { get; set; }
+        public bool Status { get; set; }
         public DateTime LastLoginAt { get; set; }
         public int FailedLoginAttempts { get; set; }
         public DateTime? LockedUntil { get; set; }

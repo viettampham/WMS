@@ -32,4 +32,10 @@ public partial class AuditDetail
     public string? Location { get; set; }
 
     public DateTime? DateCreate { get; set; }
+
+    public string? Owner { get; set; }
+
+    public string? PlanAction { get; set; }
+
+    public bool? IsPrivate { get; set; }
 }

@@ -51,7 +51,7 @@ namespace WMS.Services.Service
                 nu.Address = request.Address;
                 nu.Avatar = request.Avatar;
                 nu.DateOfBirth = request.DateOfBirth;
-                nu.Status = "Active";
+                nu.Status = true;
                 nu.FailedLoginAttempts = 0;
                 nu.RoleLevel = request.RoleLevel;
                 nu.CreateAt = DateTime.Now;
@@ -85,8 +85,7 @@ namespace WMS.Services.Service
                 && (x.Email.Contains(req.Email) || req.Email == "")
                 && (x.PhoneNumber.Contains(req.PhoneNumber) || req.PhoneNumber == "")
                 && (x.Gender == req.Gender || req.Gender == "")
-                && (x.Status == req.Status || req.Status == "")
-                && x.Status == "Active").AsQueryable();
+                && (x.Status == req.Status)).AsQueryable();
 
                 var totalRecords = query.Count();
 
@@ -141,7 +140,7 @@ namespace WMS.Services.Service
                     return res;
                 }
 
-                User tnv = _dbcontext.Users.Where(x => x.UserName == request.UserName && x.Status == "Active").FirstOrDefault();
+                User tnv = _dbcontext.Users.Where(x => x.UserName == request.UserName && x.Status == true).FirstOrDefault();
                 if (tnv != null)
                 {
                     bool verifyPass = VerifyPassword(request.Password, tnv.PasswordHash);
@@ -219,7 +218,7 @@ namespace WMS.Services.Service
                 }
 
                 targetU.FullName = request.FullName;
-                targetU.UserName = request.Username;
+                targetU.UserName = request.UserName;
                 targetU.Email = request.Email;
                 targetU.PhoneNumber = request.PhoneNumber;
                 targetU.Address = request.Address;
@@ -227,6 +226,9 @@ namespace WMS.Services.Service
                 targetU.DateOfBirth = request.DateOfBirth;
                 targetU.Gender = request.Gender;
                 targetU.Cccd = request.CCCD;
+                targetU.RoleLevel = request.RoleLevel;
+                targetU.PhongBan = request.PhongBan;
+                targetU.Status = request.TrangThai;
 
                 targetU.EditAt = DateTime.Now;
                 targetU.EditBy = _currentUserService.UserName;
@@ -257,7 +259,7 @@ namespace WMS.Services.Service
                     return res;
                 }
 
-                targetU.Status = "Delete";
+                targetU.Status = false;
                 targetU.DeleteBy = _currentUserService.UserName;
                 targetU.DeleteAt = DateTime.Now;
                 _dbcontext.SaveChanges();
@@ -288,6 +290,26 @@ namespace WMS.Services.Service
                 return res;
             }
             catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<Department>> GetPhongBan()
+        {
+            CommonResponseModel<Department> res = new CommonResponseModel<Department>();
+            try
+            {
+                List<Department> lst = await _dbcontext.Departments.ToListAsync();
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.ListData = lst;
+
+                return res;
+            }
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;

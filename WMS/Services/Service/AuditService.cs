@@ -1,11 +1,15 @@
 ﻿using AutoMapper;
+using ImageMagick;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System.Net;
+using System.Net.Mail;
 using WMS.Models;
+using WMS.Models.Request;
 using WMS.Models.Request.Audit;
 using WMS.Models.Response.Audit;
 using WMS.Models.Response.Common;
 using WMS.Services.impl;
-using ImageMagick;
 
 
 namespace WMS.Services.Service
@@ -15,10 +19,12 @@ namespace WMS.Services.Service
         private readonly LienVietStorageContext _context;
         private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
-        public AuditService(LienVietStorageContext context, ICurrentUserService currentUserService, IMapper mapper) { 
+        private readonly EmailSetting _emailSettings;
+        public AuditService(LienVietStorageContext context, ICurrentUserService currentUserService, IMapper mapper, IOptions<EmailSetting> emailSettings) { 
             _context = context;
             _currentUserService = currentUserService;
             _mapper = mapper;
+            _emailSettings = emailSettings.Value;
         }
 
         public async Task<CommonResponseModel<string>> CreateAudit(CreateAuditRequest req)
@@ -74,7 +80,10 @@ namespace WMS.Services.Service
                         if (item.Id == req.IdDetachIssue)
                         {
                             newi.Assignee = req.Assignee;
-                            newi.DueDate = req.DueDate;
+                            if (DateTime.TryParse(req.DueDate, out var dueDate))
+                            {
+                                newi.DueDate = dueDate;
+                            }
                             newi.Status = "Mới phát hiện";
                             newi.Note = req.Note;
                             newi.Evalue = req.Evalue;
@@ -96,7 +105,10 @@ namespace WMS.Services.Service
                     if (tgr != null)
                     {
                         tgr.Assignee = req.Assignee;
-                        tgr.DueDate = req.DueDate;
+                        if (DateTime.TryParse(req.DueDate, out var dueDate))
+                        {
+                            tgr.DueDate = dueDate;
+                        }
                         tgr.Status = "Mới phát hiện";
                         tgr.Note = req.Note;
                         tgr.Evalue = req.Evalue;
@@ -115,7 +127,10 @@ namespace WMS.Services.Service
                         newi.OperationStandard = operationStandard?.OperationStandard1;
                         newi.DetechIssue = tgrDetechIssue.DetechIssue1;
                         newi.Assignee = req.Assignee;
-                        newi.DueDate = req.DueDate;
+                        if (DateTime.TryParse(req.DueDate, out var dueDate))
+                        {
+                            newi.DueDate = dueDate;
+                        }
                         newi.Status = "Mới phát hiện";
                         newi.Note = req.Note;
                         newi.Evalue = req.Evalue;
@@ -157,24 +172,16 @@ namespace WMS.Services.Service
                 string extension = Path.GetExtension(req.ImageBefore.FileName);
                 string fileName = $"{req.IdOps}_{req.IdDetachIssue}_{Guid.NewGuid()}{extension}.png";
 
-                //string pathSave = Path.Combine(checkCont.SoBooking, checkCont.SoCont, fileName);
                 string filePath = Path.Combine(folderPath, fileName);
 
                 string directoryPath = Path.GetDirectoryName(filePath);
 
-                // Tạo thư mục nếu chưa tồn tại
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
                 }
-
-                //using (var stream = new FileStream(filePath, FileMode.Create))
-                //{
-                //    await req.ImageBefore.CopyToAsync(stream);
-                //}
+               
                 await CompressImageTo200KbAsync(req.ImageBefore, filePath);
-                //string imagePath = Path.Combine("ContImages", fileName);
-
 
                 AuditDetail newi = new AuditDetail();
                 newi.AuditId = req.IdAudit;
@@ -184,13 +191,18 @@ namespace WMS.Services.Service
                     .FirstOrDefaultAsync();
                 newi.DetechIssue = await _context.DetechIssues.Where(x=>x.Id == req.IdDetachIssue).Select(x=>x.DetechIssue1).FirstOrDefaultAsync();
                 newi.Assignee = req.Assignee;
-                newi.DueDate = req.DueDate;
-                newi.Status = "Mới phát hiện";
+                if (String.IsNullOrEmpty(req.DueDate))
+                {
+                    newi.DueDate = Convert.ToDateTime(req.DueDate);
+                }
+                newi.Status = req.Status;
+                newi.IsPrivate = req.IsPrivate;
                 newi.Note = req.Note;
                 newi.Evalue = req.Evalue;
                 newi.Location = req.Location;
                 newi.DateCreate = DateTime.Now;
                 newi.ImageBefore = fileName;
+                newi.Owner = req.Owner;
                 await _context.AuditDetails.AddAsync(newi);
                 await _context.SaveChangesAsync();
 
@@ -331,17 +343,9 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<PagingResponse<AuditDetailResponse>>> GetAuditDetail(GetAuditDetailRequest req)
         {
             CommonResponseModel<PagingResponse<AuditDetailResponse>> res = new CommonResponseModel<PagingResponse<AuditDetailResponse>>();
-            //PagingResponse<AuditDetailResponse> pres = new PagingResponse<AuditDetailResponse>();
             try {
-
-                //var fromDate = req.FromDate; // 00:00:00
-
-                //var toDate = req.ToDate.AddDays(1).AddTicks(-1);
-
                 var query = _context.AuditDetails.Where(x => (x.Assignee.Contains(req.Assignee) || req.Assignee == "")
-                //&&x.DueDate>=fromDate 
-                //&& x.DueDate<=toDate
-                && (x.Status == req.Status || req.Status == "")).AsQueryable();
+                && (x.Status == req.Status || req.Status == "")).OrderByDescending(x=>x.Id).AsQueryable();
 
                 var totalRecords = query.Count();
 
@@ -451,7 +455,9 @@ namespace WMS.Services.Service
                         Evalue = x.Evalue,
                         DoneTime = x.DoneTime,
                         Location = x.Location,
-                        DateCreate = x.DateCreate
+                        DateCreate = x.DateCreate,
+                        Owner = x.Owner,
+                        ActionPlan = x.PlanAction
                     })
                     .FirstOrDefaultAsync();
 
@@ -530,8 +536,9 @@ namespace WMS.Services.Service
                     tar.ImageAfter = fileName;
                     tar.DoneTime = DateTime.Now;
                     tar.Status = "Đã hoàn thành";
+                    tar.PlanAction = req.ActionPlan;
                     await _context.SaveChangesAsync();
-                    res.Message = "Thêm ảnh after thành công";
+                    res.Message = "Xác nhận xử lý công việc thành công";
                     res.Status = "SUCCESS";
                     return res;
                 }
@@ -541,6 +548,190 @@ namespace WMS.Services.Service
                 res.Status = "ERROR";
                 res.Message = "Lỗi " + ex.Message;
                 return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<PagingResponse<AuditDetailResponse>>> GetAuditOwner(GetAuditOwner req)
+        {
+            CommonResponseModel<PagingResponse<AuditDetailResponse>> res = new CommonResponseModel<PagingResponse<AuditDetailResponse>>();
+            try
+            {
+                IQueryable<AuditDetail> query;
+
+                if (req.Status == "Đã phân công")
+                {
+                    query = _context.AuditDetails.Where(x => (x.Owner.Contains(req.Owner) || req.Owner == "")
+                    && x.Status == "Phát hành"
+                    && (x.Assignee != null && x.Assignee != "")).OrderByDescending(x => x.Id).AsQueryable();
+                }
+                else {
+                    query = _context.AuditDetails.Where(x => (x.Owner.Contains(req.Owner) || req.Owner == "")
+                         && x.Status == "Mới phát hiện").OrderByDescending(x => x.Id).AsQueryable();
+                }
+
+
+
+                var totalRecords = query.Count();
+
+                var users = await query
+                .Skip((req.PageIndex - 1) * req.PageSize)
+                .Take(req.PageSize)
+                .ToListAsync();
+
+                var data = _mapper.Map<List<AuditDetailResponse>>(users);
+
+                var paging = new PagingResponse<AuditDetailResponse>
+                {
+                    Data = data,
+                    TotalRecords = totalRecords,
+                    PageIndex = req.PageIndex,
+                    PageSize = req.PageSize
+                };
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.Data = paging;
+                return res;
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<string>> PhanCongTask(PhanCong req)
+        {
+            CommonResponseModel<string> res = new CommonResponseModel<string>();
+
+            try
+            {
+                AuditDetail tr = await _context.AuditDetails
+                    .FirstOrDefaultAsync(x => x.Id == req.IdAuditDetail);
+
+                if (tr == null)
+                {
+                    res.Message = "Không tìm thấy thông tin vấn đề";
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                tr.Assignee = req.Asignee;
+                tr.Status = "Phát hành";
+                tr.DueDate = req.DueDate;
+
+                //await _context.SaveChangesAsync();
+
+                var userTo = await _context.Users
+                    .FirstOrDefaultAsync(x => x.FullName == req.Asignee);
+
+                var userCC = await _context.Users
+                    .FirstOrDefaultAsync(x => x.FullName == tr.Owner);
+
+                // Gửi mail
+                if (userTo != null && !string.IsNullOrEmpty(userTo.Email))
+                {
+                    string body = $@"
+                    <h3>Bạn được phân công Audit Task</h3>
+
+                    <p><b>Vấn đề:</b> {tr.Note}</p>
+                    <p><b>Due Date:</b> {tr.DueDate:dd/MM/yyyy}</p>
+                    <p><b>Người phân công:</b> {tr.Owner}</p>
+                    <p><b>Người đảm nhận:</b> {tr.Assignee}</p>
+
+                    <p>Vui lòng đăng nhập hệ thống để xử lý.</p>";
+
+                    await SendMail(
+                        userTo.Email,
+                        userCC.Email,
+                        "Audit Task Assignment",
+                        body);
+                }
+
+                res.Message = "Phân công thành công";
+                res.Status = "SUCCESS";
+                return res;
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task SendMail(string toEmail, string ccMail, string subject, string body)
+        {
+            try
+            {
+                using var mail = new MailMessage();
+
+                mail.From = new MailAddress(
+                    _emailSettings.Email,
+                    _emailSettings.DisplayName);
+
+                mail.To.Add(toEmail);
+
+                if (!string.IsNullOrWhiteSpace(ccMail)) { 
+                    mail.Bcc.Add(ccMail);
+                }
+
+                mail.Subject = subject;
+                mail.Body = body;
+                mail.IsBodyHtml = true;
+
+                using var client = new SmtpClient("smtp.gmail.com", 587);
+
+                client.EnableSsl = true;
+                client.Credentials = new NetworkCredential(
+                _emailSettings.Email,
+                _emailSettings.Password);
+
+                await client.SendMailAsync(mail);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Send mail failed: {ex.Message}");
+            }
+        }
+
+
+        public async Task<string> TestSendMail()
+        {
+            try
+            {
+                using var mail = new MailMessage();
+
+                mail.From = new MailAddress(
+                    _emailSettings.Email,
+                    _emailSettings.DisplayName);
+
+                mail.To.Add("it@lienvietlogistics.com.vn");
+                mail.CC.Add("phamtampt2k1@gmail.com");
+                //mail.CC.Add("it@lienvietlogistics.com.vn");
+
+                mail.Subject = "Audit Task Assignment";
+                mail.Body = $@"
+                <h3>SMTP Test Success</h3>
+                <p>Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>";
+                mail.IsBodyHtml = true;
+
+                using var client = new SmtpClient("smtp.gmail.com", 587);
+
+                client.EnableSsl = true;
+                client.UseDefaultCredentials = false;
+                client.Credentials = new NetworkCredential(
+                _emailSettings.Email,
+                _emailSettings.Password);
+
+                await client.SendMailAsync(mail);
+
+                return "Gửi mail thành công";
+            }
+            catch (Exception ex)
+            {
+                return ex.ToString();
             }
         }
     }

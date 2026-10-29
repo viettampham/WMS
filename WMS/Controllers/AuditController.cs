@@ -28,31 +28,31 @@ namespace WMS.Controllers
         }
 
         [HttpDelete("delete-audit{id}")]
-        public async Task<IActionResult> DeleteAudit(int id) { 
+        public async Task<IActionResult> DeleteAudit(int id) {
             var res = await _auditService.DeleteAudit(id);
             return Ok(res);
         }
 
         [HttpGet("get-all-operationstandard")]
-        public async Task<IActionResult> GetOperationStandard() { 
+        public async Task<IActionResult> GetOperationStandard() {
             var res = await _auditService.GetOperation();
             return Ok(res);
         }
 
         [HttpGet("get-detechissue")]
-        public async Task<IActionResult> GetDetechIssue(int id) { 
+        public async Task<IActionResult> GetDetechIssue(int id) {
             var res = await _auditService.GetDetechByOps(id);
             return Ok(res);
         }
 
         [HttpGet("get-assignee")]
-        public async Task<IActionResult> GetAllAssignee() { 
+        public async Task<IActionResult> GetAllAssignee() {
             var res = await _auditService.GetAssignee();
             return Ok(res);
         }
 
         [HttpPost("create-audit-detail")]
-        public async Task<IActionResult> CreateAuditDetail(CreateAuditDetailRequest req) { 
+        public async Task<IActionResult> CreateAuditDetail(CreateAuditDetailRequest req) {
             var res = await _auditService.CreateAuditDetail(req);
             return Ok(res);
         }
@@ -65,19 +65,19 @@ namespace WMS.Controllers
         }
 
         [HttpPost("get-audit-detail")]
-        public async Task<IActionResult> GetAuditDetail(GetAuditDetailRequest req) { 
+        public async Task<IActionResult> GetAuditDetail(GetAuditDetailRequest req) {
             var res = await _auditService.GetAuditDetail(req);
             return Ok(res);
         }
 
         [HttpGet("get-location")]
-        public async Task<IActionResult> GetLocation() { 
+        public async Task<IActionResult> GetLocation() {
             var res = await _auditService.GetLocation();
             return Ok(res);
         }
 
         [HttpGet("get-auditdetail-by-id")]
-        public async Task<IActionResult> GetAuditDetailByID(int id) { 
+        public async Task<IActionResult> GetAuditDetailByID(int id) {
             var res = await _auditService.GetAuditDetailByID(id);
             return Ok(res);
         }
@@ -87,5 +87,24 @@ namespace WMS.Controllers
             var res = await _auditService.AddImageAfterToAuditDetail(req);
             return Ok(res);
         }
+
+        [HttpPost("get-audit-owner")]
+        public async Task<IActionResult> GetAuditOwner(GetAuditOwner req) {
+            var res = await _auditService.GetAuditOwner(req);
+            return Ok(res);
+        }
+
+        [HttpPost("phancong")]
+        public async Task<IActionResult> PhanCong(PhanCong req) {
+            var res = await _auditService.PhanCongTask(req);
+            return Ok(res);
+        }
+
+        [HttpPost("test-mail")]
+        public async Task<IActionResult> TestSendMail() {
+            var res = await _auditService.TestSendMail();
+            return Ok(res);
+        }
+
     }
 }
