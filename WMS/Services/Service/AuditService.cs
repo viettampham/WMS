@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
+using System.Security.AccessControl;
 using WMS.Models;
 using WMS.Models.Request;
 using WMS.Models.Request.Audit;
@@ -191,7 +192,7 @@ namespace WMS.Services.Service
                     .FirstOrDefaultAsync();
                 newi.DetechIssue = await _context.DetechIssues.Where(x=>x.Id == req.IdDetachIssue).Select(x=>x.DetechIssue1).FirstOrDefaultAsync();
                 newi.Assignee = req.Assignee;
-                if (String.IsNullOrEmpty(req.DueDate))
+                if (!String.IsNullOrEmpty(req.DueDate))
                 {
                     newi.DueDate = Convert.ToDateTime(req.DueDate);
                 }
@@ -205,6 +206,118 @@ namespace WMS.Services.Service
                 newi.Owner = req.Owner;
                 await _context.AuditDetails.AddAsync(newi);
                 await _context.SaveChangesAsync();
+
+
+                //gửi mail khi phát hành
+                if (req.Status == "Phát hành")
+                {
+                    string body = $@"
+                        <div style='font-family:Segoe UI, Arial, sans-serif; font-size:14px; color:#333;'>
+
+                            <div style='background:#1F4E79;color:#fff;padding:15px 20px;border-radius:6px 6px 0 0;'>
+                                <h2 style='margin:0;'>THÔNG BÁO PHÂN CÔNG AUDIT TASK</h2>
+                            </div>
+
+                            <div style='border:1px solid #d9d9d9;padding:20px;border-radius:0 0 6px 6px;'>
+
+                                <p>Kính gửi <b>{newi.Assignee}</b>,</p>
+
+                                <p>
+                                    Hệ thống vừa ghi nhận một nhiệm vụ Audit mới được phân công đến Quý Anh/Chị.
+                                    Vui lòng xem thông tin chi tiết bên dưới và thực hiện xử lý theo đúng thời hạn.
+                                </p>
+
+                                <table style='border-collapse:collapse;width:100%;margin-top:15px;'>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;width:180px;'>
+                                            Nội dung vấn đề
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {newi.Note}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;width:180px;'>
+                                            Vi phạm mục
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {newi.OperationStandard} - {newi.DetechIssue}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Địa điểm
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {newi.Location}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Người phát hiện
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {newi.Owner} - phát hiện ngày {newi.DateCreate:dd/MM/yyyy}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Người phụ trách
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {newi.Assignee}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Hạn hoàn thành
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;color:#C00000;font-weight:bold;'>
+                                            {newi.DueDate:dd/MM/yyyy}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Trạng thái
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;color:#C00000;font-weight:bold;'>
+                                            {newi.Status}
+                                        </td>
+                                    </tr>
+
+                                </table>
+
+                                <p style='margin-top:20px;'>
+                                    Đề nghị Quý Anh/Chị đăng nhập vào hệ thống Audit để cập nhật nguyên nhân,
+                                    hành động khắc phục và tiến độ thực hiện.
+                                </p>
+
+                                <p>
+                                    Trường hợp đã hoàn thành xử lý, vui lòng cập nhật trạng thái trên hệ thống để phục vụ công tác theo dõi và đánh giá.
+                                </p>
+
+                                <hr style='margin:25px 0;border:none;border-top:1px solid #ddd;'>
+
+                                <p style='font-size:12px;color:#666;'>
+                                    Đây là thư thông báo được gửi tự động từ hệ thống Audit.<br/>
+                                    Vui lòng không trả lời thư điện tử này.
+                                </p>
+
+                            </div>
+                        </div>";
+
+                    User userTo = await _context.Users.Where(x => x.FullName == newi.Assignee).FirstOrDefaultAsync();
+                    User userCC = await _context.Users.Where(x => x.FullName == newi.Owner).FirstOrDefaultAsync();
+
+                    await SendMail(
+                        userTo.Email,
+                        userCC.Email,
+                        "Audit Task Assignment",
+                        body);
+                }
 
                 res.Message = "Thành công";
                 res.Status = "SUCCESS";
@@ -538,6 +651,111 @@ namespace WMS.Services.Service
                     tar.Status = "Đã hoàn thành";
                     tar.PlanAction = req.ActionPlan;
                     await _context.SaveChangesAsync();
+
+                    string subject = $"[AUDIT SYSTEM] Công việc Audit đã hoàn thành";
+
+                    User userTo = await _context.Users.Where(x => x.FullName == tar.Owner).FirstOrDefaultAsync();
+                    User userCC = await _context.Users.Where(x => x.FullName == tar.Assignee).FirstOrDefaultAsync();
+
+                    string body = $@"
+                    <div style='font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#333;'>
+
+                        <div style='background-color:#1F4E78;padding:15px;color:white;'>
+                            <h2 style='margin:0;'>✅ AUDIT TASK COMPLETED</h2>
+                        </div>
+
+                        <div style='padding:20px;border:1px solid #d9d9d9;border-top:none;'>
+
+                            <p>Xin chào <b>{userTo.FullName}</b>,</p>
+
+                            <p>
+                                Hệ thống ghi nhận công việc Audit đã được xử lý và hoàn thành.
+                                Thông tin chi tiết như sau:
+                            </p>
+
+                            <table style='border-collapse:collapse;width:100%;margin-top:15px;'>
+                                <tr>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;background:#f5f5f5;width:220px;'>
+                                        <b>Người phát hiện</b>
+                                    </td>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;'>
+                                        {tar.Owner}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;background:#f5f5f5;width:220px;'>
+                                        <b>Thời gian/ địa điểm</b>
+                                    </td>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;'>
+                                        {tar.Location} / {tar.DateCreate:dd/MM/yyyy HH:mm}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;background:#f5f5f5;width:220px;'>
+                                        <b>Vấn đề phát hiện</b>
+                                    </td>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;'>
+                                        {tar.Note}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;background:#f5f5f5;width:220px;'>
+                                        <b>Người xử lý</b>
+                                    </td>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;'>
+                                        {tar.Assignee}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;background:#f5f5f5;'>
+                                        <b>Thời gian hoàn thành</b>
+                                    </td>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;'>
+                                        {tar.DoneTime:dd/MM/yyyy HH:mm}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;background:#f5f5f5;'>
+                                        <b>Biện pháp xử lý</b>
+                                    </td>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;'>
+                                        {req.ActionPlan}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;background:#f5f5f5;'>
+                                        <b>Trạng thái</b>
+                                    </td>
+                                    <td style='border:1px solid #d9d9d9;padding:10px;color:green;font-weight:bold;'>
+                                        Đã hoàn thành
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style='margin-top:20px;'>
+                                Vui lòng đăng nhập hệ thống Audit để xem chi tiết và đánh giá kết quả xử lý.
+                            </p>
+
+                            <div style='margin-top:30px;padding-top:15px;border-top:1px solid #e8e8e8;color:#666;'>
+                                Trân trọng,<br/>
+                                <b>Audit System</b><br/>
+                                Liên Việt Logistics
+                            </div>
+
+                        </div>
+
+                    </div>";
+
+                    await SendMail(
+                        userTo.Email,
+                        userCC.Email,
+                        "[AUDIT SYSTEM] Công việc Audit đã hoàn thành",
+                        body);
+
+
                     res.Message = "Xác nhận xử lý công việc thành công";
                     res.Status = "SUCCESS";
                     return res;
@@ -621,7 +839,7 @@ namespace WMS.Services.Service
                 tr.Status = "Phát hành";
                 tr.DueDate = req.DueDate;
 
-                //await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
                 var userTo = await _context.Users
                     .FirstOrDefaultAsync(x => x.FullName == req.Asignee);
@@ -633,14 +851,102 @@ namespace WMS.Services.Service
                 if (userTo != null && !string.IsNullOrEmpty(userTo.Email))
                 {
                     string body = $@"
-                    <h3>Bạn được phân công Audit Task</h3>
+                        <div style='font-family:Segoe UI, Arial, sans-serif; font-size:14px; color:#333;'>
 
-                    <p><b>Vấn đề:</b> {tr.Note}</p>
-                    <p><b>Due Date:</b> {tr.DueDate:dd/MM/yyyy}</p>
-                    <p><b>Người phân công:</b> {tr.Owner}</p>
-                    <p><b>Người đảm nhận:</b> {tr.Assignee}</p>
+                            <div style='background:#1F4E79;color:#fff;padding:15px 20px;border-radius:6px 6px 0 0;'>
+                                <h2 style='margin:0;'>THÔNG BÁO PHÂN CÔNG AUDIT TASK</h2>
+                            </div>
 
-                    <p>Vui lòng đăng nhập hệ thống để xử lý.</p>";
+                            <div style='border:1px solid #d9d9d9;padding:20px;border-radius:0 0 6px 6px;'>
+
+                                <p>Kính gửi <b>{tr.Assignee}</b>,</p>
+
+                                <p>
+                                    Hệ thống vừa ghi nhận một nhiệm vụ Audit mới được phân công đến Quý Anh/Chị.
+                                    Vui lòng xem thông tin chi tiết bên dưới và thực hiện xử lý theo đúng thời hạn.
+                                </p>
+
+                                <table style='border-collapse:collapse;width:100%;margin-top:15px;'>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;width:180px;'>
+                                            Nội dung vấn đề
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {tr.Note}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;width:180px;'>
+                                            Vi phạm mục
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {tr.OperationStandard} - {tr.DetechIssue}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Địa điểm / Thời gian
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {tr.Location} / {tr.DateCreate:dd/MM/yyyy}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Người phát hiện
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {tr.Owner}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Người phụ trách
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;'>
+                                            {tr.Assignee}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Hạn hoàn thành
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;color:#C00000;font-weight:bold;'>
+                                            {tr.DueDate:dd/MM/yyyy}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style='padding:10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;'>
+                                            Trạng thái
+                                        </td>
+                                        <td style='padding:10px;border:1px solid #ddd;color:#C00000;font-weight:bold;'>
+                                            {tr.Status}
+                                        </td>
+                                    </tr>
+
+                                </table>
+
+                                <p style='margin-top:20px;'>
+                                    Đề nghị Quý Anh/Chị đăng nhập vào hệ thống Audit để cập nhật nguyên nhân,
+                                    hành động khắc phục và tiến độ thực hiện.
+                                </p>
+
+                                <p>
+                                    Trường hợp đã hoàn thành xử lý, vui lòng cập nhật trạng thái trên hệ thống để phục vụ công tác theo dõi và đánh giá.
+                                </p>
+
+                                <hr style='margin:25px 0;border:none;border-top:1px solid #ddd;'>
+
+                                <p style='font-size:12px;color:#666;'>
+                                    Đây là thư thông báo được gửi tự động từ hệ thống Audit.<br/>
+                                    Vui lòng không trả lời thư điện tử này.
+                                </p>
+
+                            </div>
+                        </div>";
 
                     await SendMail(
                         userTo.Email,
@@ -673,7 +979,8 @@ namespace WMS.Services.Service
 
                 mail.To.Add(toEmail);
 
-                if (!string.IsNullOrWhiteSpace(ccMail)) { 
+                if (!string.IsNullOrWhiteSpace(ccMail))
+                {
                     mail.Bcc.Add(ccMail);
                 }
 
@@ -697,41 +1004,35 @@ namespace WMS.Services.Service
         }
 
 
-        public async Task<string> TestSendMail()
+
+        public async Task<CommonResponseModel<CtpatCriteriaResponse>> GetCtpatCriteria()
         {
+            CommonResponseModel<CtpatCriteriaResponse> res = new CommonResponseModel<CtpatCriteriaResponse>();
             try
             {
-                using var mail = new MailMessage();
+                List<CtpatTopic> lst = await _context.CtpatTopics.ToListAsync();
+                List<CtpatCriteriaResponse> lstRes = new List<CtpatCriteriaResponse>();
 
-                mail.From = new MailAddress(
-                    _emailSettings.Email,
-                    _emailSettings.DisplayName);
+                List<CtpatCriterion> criterials = await _context.CtpatCriteria.ToListAsync();
 
-                mail.To.Add("it@lienvietlogistics.com.vn");
-                mail.CC.Add("phamtampt2k1@gmail.com");
-                //mail.CC.Add("it@lienvietlogistics.com.vn");
+                lst.ForEach(async topi => {
+                    CtpatCriteriaResponse item = new CtpatCriteriaResponse();
+                    item.IDTopic = topi.Id;
+                    item.Topic = topi.Topic;
+                    item.TopicNote = topi.Note;
+                    item.Criterias = criterials.Where(x => x.Idtopic == topi.Id).ToList();
+                    lstRes.Add(item);
+                });
 
-                mail.Subject = "Audit Task Assignment";
-                mail.Body = $@"
-                <h3>SMTP Test Success</h3>
-                <p>Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>";
-                mail.IsBodyHtml = true;
-
-                using var client = new SmtpClient("smtp.gmail.com", 587);
-
-                client.EnableSsl = true;
-                client.UseDefaultCredentials = false;
-                client.Credentials = new NetworkCredential(
-                _emailSettings.Email,
-                _emailSettings.Password);
-
-                await client.SendMailAsync(mail);
-
-                return "Gửi mail thành công";
+                res.Message = "lấy bộ tiêu chí C-TPAT thành công";
+                res.Status = "SUCCESS";
+                res.ListData = lstRes;
+                return res;
             }
-            catch (Exception ex)
-            {
-                return ex.ToString();
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
             }
         }
     }

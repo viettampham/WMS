@@ -2,6 +2,7 @@
 using WMS.Models;
 using WMS.Models.Response.Audit;
 using WMS.Models.Response.Cont;
+using WMS.Models.Response.LeaveRequest;
 using WMS.Models.Response.User;
 namespace WMS.Mappings
 {
@@ -20,6 +21,7 @@ namespace WMS.Mappings
             CreateMap<Cont, DeclareContResponse>();
             CreateMap<Audit, AuditResponse>();
             CreateMap<AuditDetail, AuditDetailResponse>();
+            CreateMap<LeaveRequest, LeaveResponse>();
 
 
         }

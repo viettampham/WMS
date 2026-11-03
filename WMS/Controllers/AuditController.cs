@@ -100,9 +100,9 @@ namespace WMS.Controllers
             return Ok(res);
         }
 
-        [HttpPost("test-mail")]
-        public async Task<IActionResult> TestSendMail() {
-            var res = await _auditService.TestSendMail();
+        [HttpGet("get-ctpat-criteria")]
+        public async Task<IActionResult> GetCtpatCriteria() {
+            var res = await _auditService.GetCtpatCriteria();
             return Ok(res);
         }
 

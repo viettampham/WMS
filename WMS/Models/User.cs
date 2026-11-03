@@ -51,5 +51,9 @@ public partial class User
 
     public string? PhongBan { get; set; }
 
+    public string? CodeUser { get; set; }
+
+    public int? Stt { get; set; }
+
     public virtual Role RoleLevelNavigation { get; set; } = null!;
 }

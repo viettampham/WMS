@@ -29,6 +29,8 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<PagingResponse<AuditDetailResponse>>> GetAuditOwner(GetAuditOwner req);
 
         Task<CommonResponseModel<string>> PhanCongTask(PhanCong req);
-        Task<string> TestSendMail();
+
+        Task<CommonResponseModel<CtpatCriteriaResponse>> GetCtpatCriteria();
+
     }
 }

@@ -31,7 +31,13 @@ public partial class LienVietStorageContext : DbContext
 
     public virtual DbSet<DetechIssue> DetechIssues { get; set; }
 
+    public virtual DbSet<LeaveRequest> LeaveRequests { get; set; }
+
+    public virtual DbSet<LeaveType> LeaveTypes { get; set; }
+
     public virtual DbSet<Location> Locations { get; set; }
+
+    public virtual DbSet<LogApprove> LogApproves { get; set; }
 
     public virtual DbSet<OperationStandard> OperationStandards { get; set; }
 
@@ -42,6 +48,7 @@ public partial class LienVietStorageContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=localhost;Database=LienVietStorage;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -135,6 +142,39 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.Type).HasMaxLength(10);
         });
 
+        modelBuilder.Entity<LeaveRequest>(entity =>
+        {
+            entity.ToTable("LeaveRequest");
+
+            entity.Property(e => e.Code).HasMaxLength(10);
+            entity.Property(e => e.CreateBy).HasMaxLength(50);
+            entity.Property(e => e.CreateDate).HasColumnType("datetime");
+            entity.Property(e => e.FromDate).HasColumnType("datetime");
+            entity.Property(e => e.LeaveType).HasMaxLength(50);
+            entity.Property(e => e.Reason).HasMaxLength(50);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.ToDate).HasColumnType("datetime");
+            entity.Property(e => e.TotalDays).HasColumnType("decimal(5, 1)");
+            entity.Property(e => e.UpdateBy).HasMaxLength(50);
+            entity.Property(e => e.UpdateDate).HasColumnType("datetime");
+            entity.Property(e => e.UserCode)
+                .HasMaxLength(10)
+                .IsFixedLength();
+            entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<LeaveType>(entity =>
+        {
+            entity.ToTable("LeaveType");
+
+            entity.Property(e => e.LeaveType1)
+                .HasMaxLength(50)
+                .HasColumnName("LeaveType");
+            entity.Property(e => e.Note)
+                .HasMaxLength(10)
+                .IsFixedLength();
+        });
+
         modelBuilder.Entity<Location>(entity =>
         {
             entity.ToTable("Location");
@@ -143,6 +183,17 @@ public partial class LienVietStorageContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("Location");
             entity.Property(e => e.Note).HasMaxLength(300);
+        });
+
+        modelBuilder.Entity<LogApprove>(entity =>
+        {
+            entity.ToTable("Log_Approve");
+
+            entity.Property(e => e.Action).HasMaxLength(50);
+            entity.Property(e => e.ActionTime).HasColumnType("datetime");
+            entity.Property(e => e.ApproverCode).HasMaxLength(10);
+            entity.Property(e => e.ApproverName).HasMaxLength(50);
+            entity.Property(e => e.Comment).HasMaxLength(100);
         });
 
         modelBuilder.Entity<OperationStandard>(entity =>
@@ -190,6 +241,7 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.Cccd)
                 .HasMaxLength(50)
                 .HasColumnName("CCCD");
+            entity.Property(e => e.CodeUser).HasMaxLength(10);
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
             entity.Property(e => e.CreateBy).HasMaxLength(50);
             entity.Property(e => e.DeleteAt).HasColumnType("datetime");

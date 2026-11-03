@@ -24,5 +24,7 @@
         public string DeleteBy { get; set; }
         public string CCCD { get; set; }
         public string PhongBan { get; set; }
+        public string CodeUser { get; set; }
+
     }
 }

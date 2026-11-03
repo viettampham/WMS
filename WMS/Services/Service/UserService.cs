@@ -58,6 +58,9 @@ namespace WMS.Services.Service
                 nu.Cccd = request.CCCD;
                 nu.Gender = request.Gender;
                 nu.PhongBan = request.PhongBan;
+                int maxStt = await _dbcontext.Users.MaxAsync(x => (int?)x.Stt) ?? 0;
+                nu.CodeUser = GenerateNextCode(maxStt);
+                nu.Stt = maxStt + 1;
 
                 _dbcontext.Users.Add(nu);
                 _dbcontext.SaveChanges();
@@ -140,9 +143,14 @@ namespace WMS.Services.Service
                     return res;
                 }
 
-                User tnv = _dbcontext.Users.Where(x => x.UserName == request.UserName && x.Status == true).FirstOrDefault();
+                User tnv = _dbcontext.Users.Where(x => x.UserName == request.UserName).FirstOrDefault();
                 if (tnv != null)
                 {
+                    if (tnv.Status == false) {
+                        res.Message = "Tài khoản đã không còn hoạt động";
+                        res.Status = "WARNING";
+                        return res;
+                    }
                     bool verifyPass = VerifyPassword(request.Password, tnv.PasswordHash);
                     if (verifyPass)
                     {
@@ -184,13 +192,21 @@ namespace WMS.Services.Service
 
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            string roleName = _dbcontext.Roles.Where(x => x.RoleLevel == nhanvien.RoleLevel).FirstOrDefault().RoleName;
+            Role role = _dbcontext.Roles.Where(x => x.RoleLevel == nhanvien.RoleLevel).FirstOrDefault();
+
+            string roleName = role.RoleName;
+            string chucvu = role.Note;
 
             var claims = new[]
             {
                 new Claim("UserName", nhanvien.UserName ?? ""),
+                new Claim("CodeUser", nhanvien.CodeUser ?? ""),
+                new Claim("PhongBan", nhanvien.PhongBan ?? ""),
                 new Claim("UserId", nhanvien.Id.ToString()),
                 new Claim("Fullname", nhanvien.FullName?? ""),
+                new Claim("ChucVu", chucvu),
+                new Claim("PhoneNumber", nhanvien.PhoneNumber),
+                new Claim("Email", nhanvien.Email),
                 new Claim("RoleLevel", nhanvien.RoleLevel.ToString()?? ""),
                 new Claim(ClaimTypes.Role, roleName ?? "")
             };
@@ -314,6 +330,13 @@ namespace WMS.Services.Service
                 res.Status = "ERROR";
                 return res;
             }
+        }
+
+        public static string GenerateNextCode(int currentStt)
+        {
+            int number = currentStt + 1;
+            string prefix = "LVLOG";
+            return $"{prefix}{(number):D4}";
         }
     }
 
