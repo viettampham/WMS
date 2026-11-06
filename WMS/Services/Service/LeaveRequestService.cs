@@ -44,7 +44,7 @@ namespace WMS.Services.Service
                 newi.ToDate = req.ToDate;
                 newi.TotalDays = req.TotalDay;
                 newi.Reason = req.Reason;
-                newi.Status = "Đăng ký số";
+                newi.Status = req.Status;
                 newi.CurrentStep = 1;
                 newi.CreateDate = DateTime.Now;
                 newi.CreateBy = _currentUserService.UserName;
@@ -55,6 +55,7 @@ namespace WMS.Services.Service
 
                 res.Message = "Đăng ký số thành công đơn xin nghỉ phép";
                 res.Status = "SUCCESS";
+                res.Data = newi.Code;
                 return res;
             }
             catch (Exception ex)
