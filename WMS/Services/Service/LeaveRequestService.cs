@@ -39,6 +39,7 @@ namespace WMS.Services.Service
                 newi.UserCode = req.CodeUser;
                 newi.Username = req.UserName;
                 newi.LeaveType = req.LeaveType;
+                newi.TypeShift = req.TypeShift;
                 newi.FromDate = req.FromDate;
                 newi.ToDate = req.ToDate;
                 newi.TotalDays = req.TotalDay;

@@ -24,10 +24,10 @@ namespace WMS.Controllers
         [HttpPost("get-list")]
         public async Task<IActionResult> GetDS(GetLeaveRequest req) {
             var res = await _leaveRequest.GetLeave(req);
-            return Ok(res);
+            return Ok(res); 
         }
 
-        [HttpPost("get-leavetype")]
+        [HttpGet("get-leavetype")]
         public async Task<IActionResult> getleaveType()
         {
             var res = await _leaveRequest.GetTypes();

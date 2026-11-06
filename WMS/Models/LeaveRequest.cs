@@ -36,4 +36,6 @@ public partial class LeaveRequest
     public string? UpdateBy { get; set; }
 
     public int? Stt { get; set; }
+
+    public string? TypeShift { get; set; }
 }
