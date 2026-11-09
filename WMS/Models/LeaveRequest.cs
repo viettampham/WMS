@@ -38,4 +38,6 @@ public partial class LeaveRequest
     public int? Stt { get; set; }
 
     public string? TypeShift { get; set; }
+
+    public string? Fullname { get; set; }
 }

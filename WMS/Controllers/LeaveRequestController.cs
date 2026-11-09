@@ -33,5 +33,17 @@ namespace WMS.Controllers
             var res = await _leaveRequest.GetTypes();
             return Ok(res);
         }
+
+        [HttpGet("get-leave-by-code")]
+        public async Task<IActionResult> GetLeaveByCode(string code) { 
+            var res = await _leaveRequest.GetLeaveByCode(code);
+            return Ok(res);
+        }
+
+        [HttpPost("phat-hanh-don")]
+        public async Task<IActionResult> PhatHanhDon(string code) { 
+            var res = await _leaveRequest.PhatHanhDon(code);
+            return Ok(res);
+        }
     }
 }

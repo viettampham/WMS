@@ -55,5 +55,7 @@ public partial class User
 
     public int? Stt { get; set; }
 
+    public string? RoleName { get; set; }
+
     public virtual Role RoleLevelNavigation { get; set; } = null!;
 }

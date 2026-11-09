@@ -149,6 +149,7 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.CreateBy).HasMaxLength(50);
             entity.Property(e => e.CreateDate).HasColumnType("datetime");
             entity.Property(e => e.FromDate).HasColumnType("datetime");
+            entity.Property(e => e.Fullname).HasMaxLength(50);
             entity.Property(e => e.LeaveType).HasMaxLength(50);
             entity.Property(e => e.Reason).HasMaxLength(50);
             entity.Property(e => e.Status).HasMaxLength(50);
@@ -256,6 +257,7 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.PasswordHash).HasMaxLength(100);
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.Property(e => e.PhongBan).HasMaxLength(20);
+            entity.Property(e => e.RoleName).HasMaxLength(50);
             entity.Property(e => e.UserName).HasMaxLength(50);
 
             entity.HasOne(d => d.RoleLevelNavigation).WithMany(p => p.Users)
