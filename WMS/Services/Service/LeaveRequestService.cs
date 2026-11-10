@@ -24,9 +24,10 @@ namespace WMS.Services.Service
             throw new NotImplementedException();
         }
 
-        public async Task<CommonResponseModel<LeaveRequest>> CreateleaveRequest(CreateLeaveRequest req)
+        public async Task<CommonResponseModel<LeaveResponse>> CreateleaveRequest(CreateLeaveRequest req)
         {
-            CommonResponseModel<LeaveRequest> res = new CommonResponseModel<LeaveRequest>();
+            CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 int CurrentYear = DateTime.Now.Year;
@@ -50,17 +51,81 @@ namespace WMS.Services.Service
                 newi.CreateDate = DateTime.Now;
                 newi.CreateBy = _currentUserService.UserName;
                 newi.Stt = stt;
+                newi.Message = "Phát hành đơn để cấp trên phê duyệt.";
+                newi.MessageNotice = "Đăng ký đơn nghỉ phép thành công";
+                newi.PendingAsigneeName = await _context.Users.Where(x=>x.CodeUser == req.PendingAsigneeCode).Select(x=>x.FullName).FirstOrDefaultAsync();
+                newi.PendingAsigneeCode = req.PendingAsigneeCode;
 
                 await _context.LeaveRequests.AddAsync(newi);
                 await _context.SaveChangesAsync();
 
+                LogApprove log = new LogApprove
+                {
+                    LeaveRequestId = newi.Id,
+                    ApproverCode = req.CodeUser,
+                    ApproverName = req.FullName,
+                    Action = "Đăng ký số",
+                    Comment = "",
+                    ActionTime = DateTime.Now
+                };
+
+                await _context.LogApproves.AddAsync(log);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                LeaveResponse resul = new LeaveResponse();
+
+                resul = _mapper.Map<LeaveResponse>(newi);
+
+                resul.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == newi.Id).ToListAsync();
+
                 res.Message = "Đăng ký số thành công đơn xin nghỉ phép";
                 res.Status = "SUCCESS";
-                res.Data = newi;
+                res.Data = resul;
                 return res;
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<PagingResponse<LeaveRequest>>> GetDSLeave(GetpaingLeaveRequets req)
+        {
+            CommonResponseModel<PagingResponse<LeaveRequest>> res = new CommonResponseModel<PagingResponse<LeaveRequest>>();
+            try {
+                var query = _context.LeaveRequests.Where(x=>(x.UserCode == req.CodeUser || req.CodeUser == "") 
+                && (x.Status == req.Status || req.Status == "")).AsQueryable();
+                
+                var totalRecords = query.Count();
+
+                var leaves = await query
+                .Skip((req.PageIndex - 1) * req.PageSize)
+                .Take(req.PageSize)
+                .ToListAsync();
+
+                var data = _mapper.Map<List<LeaveRequest>>(leaves);
+
+                var paging = new PagingResponse<LeaveRequest>
+                {
+                    Data = data,
+                    TotalRecords = totalRecords,
+                    PageIndex = req.PageIndex,
+                    PageSize = req.PageSize
+                };
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.Data = paging;
+
+                return res;
+
+            }
+            catch (Exception ex) {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -128,10 +193,10 @@ namespace WMS.Services.Service
                 ds.LeaveType = tar.LeaveType;
                 ds.FromDate = tar.FromDate;
                 ds.ToDate = tar.ToDate;
-                ds.TotalDay = tar.TotalDays;
+                ds.TotalDays = tar.TotalDays;
                 ds.Reason = tar.Reason;
                 ds.Status = tar.Status;
-                ds.CurentStep = tar.CurrentStep;
+                ds.CurrentStep = tar.CurrentStep;
                 ds.CreateDate = tar.CreateDate;
                 ds.CreateBy = tar.CreateBy;
                 ds.UpdateDate = tar.UpdateDate;
@@ -142,9 +207,44 @@ namespace WMS.Services.Service
                 ds.PhongBan = u.PhongBan;
                 ds.ChucVu = u.RoleName;
 
+                ds.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tar.Id).ToListAsync();
+
                 res.Message = "Tìm thấy thông tin";
                 res.Status = "SUCCESS";
                 res.Data = ds;
+                return res;
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(int CurrentStep)
+        {
+            CommonResponseModel<PendingAsignee> res = new CommonResponseModel<PendingAsignee>();
+            try {
+                List<PendingAsignee> resu = new List<PendingAsignee>();
+                if (CurrentStep == 0 || CurrentStep == 1) // chưa đăng ký số || đăng ký số
+                {
+                    resu = await _context.Users.Where(x => x.RoleLevel == 4).Select(x=> new PendingAsignee() { 
+                        Code = x.CodeUser,
+                        Name = x.FullName
+                    }).ToListAsync(); // cấp giám sát
+                }
+                else if (CurrentStep == 2)  // đã phát hành
+                {
+                    resu = await _context.Users.Where(x => x.RoleLevel == 3).Select(x => new PendingAsignee()
+                    {
+                        Code = x.CodeUser,
+                        Name = x.FullName
+                    }).ToListAsync(); // cấp quản lý
+                }
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.ListData = resu;
                 return res;
             }
             catch (Exception ex) {
@@ -171,10 +271,12 @@ namespace WMS.Services.Service
             }
         }
 
-        public async Task<CommonResponseModel<LeaveRequest>> PhatHanhDon(string Code)
+        public async Task<CommonResponseModel<LeaveResponse>> PhatHanhDon(string Code)
         {
-            CommonResponseModel<LeaveRequest> res = new CommonResponseModel<LeaveRequest>();
-            try {
+            CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
                 LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == Code).FirstOrDefaultAsync();
                 if (tget == null) {
                     res.Message = "Không tồn tại đơn này";
@@ -189,12 +291,35 @@ namespace WMS.Services.Service
                 }
 
                 tget.Status = "Phát hành";
+                tget.MessageNotice = "Phát hành đơn nghỉ phép thành công";
+                tget.Message = "Chờ cấp giám sát xác nhận";
                 tget.CurrentStep = 2;
 
                 await _context.SaveChangesAsync();
+
+                LogApprove log = new LogApprove
+                {
+                    LeaveRequestId = tget.Id,
+                    ApproverCode = tget.UserCode,
+                    ApproverName = tget.Fullname,
+                    Action = "Phát hành",
+                    Comment = "",
+                    ActionTime = DateTime.Now
+                };
+
+                await _context.LogApproves.AddAsync(log);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                LeaveResponse resul = new LeaveResponse();
+
+                resul = _mapper.Map<LeaveResponse>(tget);
+
+                resul.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tget.Id).ToListAsync();
+
                 res.Message = "Phát hành đơn thành công";
                 res.Status = "SUCCESS";
-                res.Data = tget;
+                res.Data = resul;
                 return res;
             }
             catch (Exception ex) {
@@ -203,5 +328,7 @@ namespace WMS.Services.Service
                 return res;
             }
         }
+
+
     }
 }

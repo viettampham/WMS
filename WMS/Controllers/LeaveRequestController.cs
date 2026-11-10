@@ -45,5 +45,17 @@ namespace WMS.Controllers
             var res = await _leaveRequest.PhatHanhDon(code);
             return Ok(res);
         }
+
+        [HttpGet("get-assigne-pending")]
+        public async Task<IActionResult> GetpendingAsignee(int currstp) { 
+            var res = await _leaveRequest.GetPendingAsigneeByCurrentStep(currstp);
+            return Ok(res);
+        }
+
+        [HttpPost("get-ds-leaves")]
+        public async Task<IActionResult> GetDsleave(GetpaingLeaveRequets req) {
+            var res = await _leaveRequest.GetDSLeave(req);
+            return Ok(res);
+        }
     }
 }

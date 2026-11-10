@@ -40,4 +40,12 @@ public partial class LeaveRequest
     public string? TypeShift { get; set; }
 
     public string? Fullname { get; set; }
+
+    public string? Message { get; set; }
+
+    public string? MessageNotice { get; set; }
+
+    public string? PendingAsigneeName { get; set; }
+
+    public string? PendingAsigneeCode { get; set; }
 }

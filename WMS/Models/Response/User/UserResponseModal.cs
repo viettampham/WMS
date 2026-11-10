@@ -27,4 +27,10 @@
         public string CodeUser { get; set; }
 
     }
+
+
+    public class PendingAsignee {
+        public string Code { get; set; }
+        public string Name { get; set; }
+    }
 }

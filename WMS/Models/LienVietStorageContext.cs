@@ -151,6 +151,10 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.FromDate).HasColumnType("datetime");
             entity.Property(e => e.Fullname).HasMaxLength(50);
             entity.Property(e => e.LeaveType).HasMaxLength(50);
+            entity.Property(e => e.Message).HasMaxLength(100);
+            entity.Property(e => e.MessageNotice).HasMaxLength(100);
+            entity.Property(e => e.PendingAsigneeCode).HasMaxLength(10);
+            entity.Property(e => e.PendingAsigneeName).HasMaxLength(50);
             entity.Property(e => e.Reason).HasMaxLength(50);
             entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.ToDate).HasColumnType("datetime");
