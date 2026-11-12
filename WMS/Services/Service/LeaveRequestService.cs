@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Net.NetworkInformation;
 using WMS.Models;
 using WMS.Models.Request.LeaveRequest;
 using WMS.Models.Response.Common;
@@ -97,10 +98,29 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<PagingResponse<LeaveRequest>>> GetDSLeave(GetpaingLeaveRequets req)
         {
             CommonResponseModel<PagingResponse<LeaveRequest>> res = new CommonResponseModel<PagingResponse<LeaveRequest>>();
-            try {
-                var query = _context.LeaveRequests.Where(x=>(x.UserCode == req.CodeUser || req.CodeUser == "") 
-                && (x.Status == req.Status || req.Status == "")).AsQueryable();
-                
+            try
+            {
+                DateTime fromDate = Convert.ToDateTime(req.FromDate).Date;
+
+                DateTime toDate = Convert.ToDateTime(req.ToDate)
+                    .Date
+                    .AddDays(1)
+                    .AddTicks(-1);
+
+                var status = req.StatusDone == "DONE"
+                    ? new[] { "Đã phê duyệt", "Hoàn thành" }
+                    : new[] { "Đăng ký số", "Phát hành", "Đã xác nhận" };
+
+                var query = _context.LeaveRequests
+                .Where(x =>
+                    (string.IsNullOrEmpty(req.CodeUser) || x.UserCode == req.CodeUser) &&
+                    x.FromDate >= fromDate &&
+                    x.FromDate <= toDate &&
+                    (req.StatusDone == "ALL" || status.Contains(x.Status))
+                )
+                .OrderByDescending(x => x.Id);
+
+
                 var totalRecords = query.Count();
 
                 var leaves = await query
@@ -124,6 +144,71 @@ namespace WMS.Services.Service
 
                 return res;
 
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetDsPendingApproveByCodeUser(GetpaingLeaveApprovePending req)
+        {
+            CommonResponseModel<PagingResponse<LeaveResponse>> res = new CommonResponseModel<PagingResponse<LeaveResponse>>();
+            try
+            {
+                User tgu = await _context.Users.Where(x => x.CodeUser == req.CodePending).FirstOrDefaultAsync();
+                string[] status;
+                if (tgu != null)
+                {
+                    if (tgu.RoleLevel == 4)
+                    {
+                        status = req.Status == "APPROVED"
+                            ? new[] { "Đã xác nhận", "Đã phê duyệt", "Hoàn thành" }
+                            : new[] { "Phát hành" };
+                    }
+                    else if (tgu.RoleLevel <= 3)
+                    {
+                        status = req.Status == "APPROVED"
+                                ? new[] { "Đã phê duyệt", "Hoàn thành" }
+                                : new[] { "Đã xác nhận" };
+                    }
+                    else
+                    {
+                        status = [];
+                    }
+
+                    var query = _context.LeaveRequests
+                        .Where(x => (x.PendingAsigneeCode == req.CodePending)
+                        && (status.Contains(x.Status))).OrderByDescending(x => x.Id).AsQueryable();
+
+                    var totalRecords = query.Count();
+
+                    var leave = await query
+                    .Skip((req.PageIndex - 1) * req.PageSize)
+                    .Take(req.PageSize)
+                    .ToListAsync();
+
+                    var data = _mapper.Map<List<LeaveResponse>>(leave);
+
+                    var paging = new PagingResponse<LeaveResponse>
+                    {
+                        Data = data,
+                        TotalRecords = totalRecords,
+                        PageIndex = req.PageIndex,
+                        PageSize = req.PageSize
+                    };
+                    res.Message = "Thành công";
+                    res.Status = "SUCCESS";
+                    res.Data = paging;
+
+                    return res;
+                }
+                else {
+                    res.Message = "Không tồn tại người phê duyệt";
+                    res.Status = "ERROR";
+                    return res;
+                }
             }
             catch (Exception ex) {
                 res.Message = "Lỗi " + ex.Message;
@@ -314,6 +399,9 @@ namespace WMS.Services.Service
                 LeaveResponse resul = new LeaveResponse();
 
                 resul = _mapper.Map<LeaveResponse>(tget);
+                User u = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
+                resul.PhongBan = u.PhongBan;
+                resul.ChucVu = u.RoleName;
 
                 resul.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tget.Id).ToListAsync();
 

@@ -57,5 +57,11 @@ namespace WMS.Controllers
             var res = await _leaveRequest.GetDSLeave(req);
             return Ok(res);
         }
+
+        [HttpPost("get-pending-currentstep")]
+        public async Task<IActionResult> GetPendingCurrentStep(GetpaingLeaveApprovePending req) { 
+            var res = await _leaveRequest.GetDsPendingApproveByCodeUser(req);
+            return Ok(res);
+        }
     }
 }

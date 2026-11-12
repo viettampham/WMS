@@ -21,5 +21,7 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(int CurrentStep);
 
         Task<CommonResponseModel<PagingResponse<LeaveRequest>>> GetDSLeave(GetpaingLeaveRequets req);
+
+        Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetDsPendingApproveByCodeUser(GetpaingLeaveApprovePending req);
     }
 }
