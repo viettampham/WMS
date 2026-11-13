@@ -70,5 +70,11 @@ namespace WMS.Controllers
             var res = await _leaveRequest.XacNhanDon(req);
             return Ok(res);
         }
+
+        [HttpPost("reject-leave")]
+        public async Task<IActionResult> RejectLeave(RejectLeaveRequets req) {
+            var res = await _leaveRequest.RejectLeave(req);
+            return Ok(res);
+        }
     }
 }

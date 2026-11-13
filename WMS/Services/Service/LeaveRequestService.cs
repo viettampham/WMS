@@ -295,6 +295,8 @@ namespace WMS.Services.Service
                 ds.Fullname = tar.Fullname;
                 ds.PhongBan = u.PhongBan;
                 ds.ChucVu = u.RoleName;
+                ds.Message = tar.Message;
+                ds.MessageNotice = tar.MessageNotice;
 
                 ds.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tar.Id).ToListAsync();
 
@@ -412,6 +414,68 @@ namespace WMS.Services.Service
                 res.Message = "Phát hành đơn thành công";
                 res.Status = "SUCCESS";
                 res.Data = resul;
+                return res;
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<LeaveResponse>> RejectLeave(RejectLeaveRequets req)
+        {
+            CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
+            try {
+                LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
+                if (tget == null) {
+                    res.Message = "Không tồn tại thông tin đơn " + req.CodeLeave;
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                if (tget.Status != "Phát hành") {
+                    res.Message = "Đơn đã phê duyệt hoặc chưa phát hành, kiểm tra lại";
+                    res.Status = "WARNING";
+                }
+
+                tget.Status = "Đăng ký số";
+                tget.CurrentStep = 1;
+                tget.Message = "Đơn bị từ chối, phát hành lại";
+                tget.MessageNotice = "Đơn bị cấp giám sát từ chối";
+
+
+                //User userLeave = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
+                //tget.PendingAsigneeCode = userLeave.CodeUser;
+                //tget.PendingAsigneeName = userLeave.FullName;
+
+                User userApprove = await _context.Users.Where(x => x.CodeUser == req.CodeReject).FirstOrDefaultAsync();
+
+                LogApprove log = new LogApprove
+                {
+                    LeaveRequestId = tget.Id,
+                    ApproverCode = userApprove.CodeUser,
+                    ApproverName = userApprove.FullName,
+                    Action = "Từ chối",
+                    Comment = req.ReasonReject,
+                    ActionTime = DateTime.Now
+                };
+
+                await _context.LogApproves.AddAsync(log);
+                await _context.SaveChangesAsync();
+
+
+                LeaveResponse resul = new LeaveResponse();
+                resul = _mapper.Map<LeaveResponse>(tget);
+                resul.PhongBan = userLeave.PhongBan;
+                resul.ChucVu = userLeave.RoleName;
+
+                resul.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tget.Id).ToListAsync();
+
+                res.Message = "Từ chối thành công đơn nghỉ phép";
+                res.Status = "SUCCESS";
+                res.Data = resul;
+
                 return res;
             }
             catch (Exception ex) {
