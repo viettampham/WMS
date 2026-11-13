@@ -164,14 +164,18 @@ namespace WMS.Services.Service
                     if (tgu.RoleLevel == 4)
                     {
                         status = req.Status == "APPROVED"
-                            ? new[] { "Đã xác nhận", "Đã phê duyệt", "Hoàn thành" }
-                            : new[] { "Phát hành" };
+                        ? new[] { "Đã xác nhận", "Đã phê duyệt", "Hoàn thành" }
+                        : req.Status == "PENDING"
+                            ? new[] { "Phát hành" }
+                            : new[] { "Đã xác nhận", "Đã phê duyệt", "Hoàn thành", "Phát hành" };
                     }
                     else if (tgu.RoleLevel <= 3)
                     {
                         status = req.Status == "APPROVED"
-                                ? new[] { "Đã phê duyệt", "Hoàn thành" }
-                                : new[] { "Đã xác nhận" };
+                        ? new[] { "Đã phê duyệt", "Hoàn thành" }
+                        : req.Status == "PENDING"
+                            ? new[] { "Đã xác nhận" }
+                            : new[] { "Đã phê duyệt", "Hoàn thành","Đã xác nhận" };
                     }
                     else
                     {
@@ -180,7 +184,7 @@ namespace WMS.Services.Service
 
                     var query = _context.LeaveRequests
                         .Where(x => (x.PendingAsigneeCode == req.CodePending)
-                        && (status.Contains(x.Status))).OrderByDescending(x => x.Id).AsQueryable();
+                        && (status.Contains(x.Status) || status.Length == 0)).OrderByDescending(x => x.Id).AsQueryable();
 
                     var totalRecords = query.Count();
 
@@ -417,6 +421,66 @@ namespace WMS.Services.Service
             }
         }
 
+        public async Task<CommonResponseModel<LeaveResponse>> XacNhanDon(XacNhanDonRequest req)
+        {
+            CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
+            try
+            {
+                LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
+                if (tget == null)
+                {
+                    res.Message = "Không tồn tại mã phiếu " + req.CodeLeave;
+                    res.Status = "ERROR";
+                    return res;
+                }
 
+                if (tget.Status != "Phát hành") {
+                    res.Message = "Phiếu nghỉ phép này đã được phê duyệt hoặc chưa phát hành";
+                    res.Status = "WARNING";
+                    return res;
+                }
+
+                tget.Status = "Đã xác nhận";
+                tget.CurrentStep = 3;
+                tget.MessageNotice = "Đã xác nhận thành công";
+                tget.Message = "Chờ phê duyệt cấp quản lý";
+
+                User approver = await _context.Users.Where(x => x.CodeUser == req.CodeApprover).FirstOrDefaultAsync();
+
+                LogApprove log = new LogApprove
+                {
+                    LeaveRequestId = tget.Id,
+                    ApproverCode = approver.CodeUser,
+                    ApproverName = approver.FullName,
+                    Action = "Xác nhận",
+                    Comment = "",
+                    ActionTime = DateTime.Now
+                };
+
+                await _context.LogApproves.AddAsync(log);
+                await _context.SaveChangesAsync();
+
+               
+
+                LeaveResponse resul = new LeaveResponse();
+                resul = _mapper.Map<LeaveResponse>(tget);
+                User u = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
+                resul.PhongBan = u.PhongBan;
+                resul.ChucVu = u.RoleName;
+
+                resul.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tget.Id).ToListAsync();
+
+                res.Message = "Xác nhận thành công";
+                res.Status = "SUCCESS";
+                res.Data = resul;
+                return res;
+
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
     }
 }

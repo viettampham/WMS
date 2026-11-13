@@ -63,5 +63,12 @@ namespace WMS.Controllers
             var res = await _leaveRequest.GetDsPendingApproveByCodeUser(req);
             return Ok(res);
         }
+
+
+        [HttpPost("xac-nhan-don")]
+        public async Task<IActionResult> XacNhanDon(XacNhanDonRequest req) {
+            var res = await _leaveRequest.XacNhanDon(req);
+            return Ok(res);
+        }
     }
 }

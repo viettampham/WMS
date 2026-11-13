@@ -23,5 +23,7 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<PagingResponse<LeaveRequest>>> GetDSLeave(GetpaingLeaveRequets req);
 
         Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetDsPendingApproveByCodeUser(GetpaingLeaveApprovePending req);
+
+        Task<CommonResponseModel<LeaveResponse>> XacNhanDon(XacNhanDonRequest req);
     }
 }
