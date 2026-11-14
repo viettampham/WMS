@@ -20,6 +20,7 @@ namespace WMS.Services.Service
             _mapper = mapper;
             _currentUserService = currentUserService;
         }
+
         public Task<CommonResponseModel<string>> CancelLeaveRequest(int id)
         {
             throw new NotImplementedException();
@@ -175,19 +176,39 @@ namespace WMS.Services.Service
                         ? new[] { "Đã phê duyệt", "Hoàn thành" }
                         : req.Status == "PENDING"
                             ? new[] { "Đã xác nhận" }
-                            : new[] { "Đã phê duyệt", "Hoàn thành","Đã xác nhận" };
+                            : new[] { "Đã phê duyệt", "Hoàn thành", "Đã xác nhận" };
                     }
                     else
                     {
                         status = [];
                     }
 
-                    var query = _context.LeaveRequests
+                    IQueryable<LeaveRequest> query = _context.LeaveRequests.AsQueryable();
+
+                    if (req.Status == "PENDING")
+                    {
+                        query = _context.LeaveRequests
                         .Where(x => (x.PendingAsigneeCode == req.CodePending)
                         && (status.Contains(x.Status) || status.Length == 0)).OrderByDescending(x => x.Id).AsQueryable();
+                    }
+                    else if (req.Status == "APPROVED")
+                    {
+                        query = _context.LeaveRequests
+                        .Where(x =>
+                            _context.LogApproves.Any(y =>
+                                y.ApproverCode == req.CodePending &&
+                                y.LeaveRequestId == x.Id)
+                            &&
+                            (status.Contains(x.Status) || status.Length == 0))
+                        .OrderByDescending(x => x.Id);
+                    }
+                    //else {
+                    //    query = _context.LeaveRequests
+                    //    .Where(x => status.Contains(x.Status) || status.Length == 0)
+                    //    .OrderByDescending(x => x.Id);
+                    //}
 
-                    var totalRecords = query.Count();
-
+                    var totalRecords = await query.CountAsync();
                     var leave = await query
                     .Skip((req.PageIndex - 1) * req.PageSize)
                     .Take(req.PageSize)
@@ -445,7 +466,7 @@ namespace WMS.Services.Service
                 tget.MessageNotice = "Đơn bị cấp giám sát từ chối";
 
 
-                //User userLeave = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
+                User userLeave = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
                 //tget.PendingAsigneeCode = userLeave.CodeUser;
                 //tget.PendingAsigneeName = userLeave.FullName;
 
@@ -511,6 +532,11 @@ namespace WMS.Services.Service
 
                 User approver = await _context.Users.Where(x => x.CodeUser == req.CodeApprover).FirstOrDefaultAsync();
 
+
+                User manager = await _context.Users.Where(x => x.RoleLevel == 3 && x.PhongBan == approver.PhongBan).FirstOrDefaultAsync();
+                tget.PendingAsigneeCode = manager.CodeUser;
+                tget.PendingAsigneeName = manager.FullName;
+
                 LogApprove log = new LogApprove
                 {
                     LeaveRequestId = tget.Id,
@@ -539,6 +565,65 @@ namespace WMS.Services.Service
                 res.Data = resul;
                 return res;
 
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<LeaveResponse>> ApproveLeave(XacNhanDonRequest req)
+        {
+            CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
+            try {
+                LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
+                if (tget == null) {
+                    res.Message = "Không tồn tại thông tin phiếu " + req.CodeLeave;
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                if (tget.Status != "Đã xác nhận") {
+                    res.Message = "Phiếu đã được phê duyệt hoặc chưa được xác nhận cấp quản lý";
+                    res.Status = "WARNING";
+                    return res;
+                }
+
+                tget.Status = "Đã phê duyệt";
+                tget.CurrentStep = 4;
+                tget.Message = "Hoàn thành";
+                tget.MessageNotice = "Đã phê duyệt cấp quản lý";
+                tget.PendingAsigneeCode = "";
+                tget.PendingAsigneeName = "";
+
+                User approver = await _context.Users.Where(x => x.CodeUser == req.CodeApprover).FirstOrDefaultAsync();
+                LogApprove log = new LogApprove
+                {
+                    LeaveRequestId = tget.Id,
+                    ApproverCode = approver.CodeUser,
+                    ApproverName = approver.FullName,
+                    Action = "Phê duyệt",
+                    Comment = "Phê duyệt nghỉ phép",
+                    ActionTime = DateTime.Now
+                };
+
+                await _context.LogApproves.AddAsync(log);
+                await _context.SaveChangesAsync();
+
+                LeaveResponse resul = new LeaveResponse();
+                resul = _mapper.Map<LeaveResponse>(tget);
+                User u = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
+                resul.PhongBan = u.PhongBan;
+                resul.ChucVu = u.RoleName;
+
+                resul.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tget.Id).ToListAsync();
+
+
+                res.Message = "Phê duyệt thành công đơn xin nghỉ phép";
+                res.Status = "SUCCESS";
+                res.Data = resul;
+                return res;
             }
             catch (Exception ex) {
                 res.Message = "Lỗi " + ex.Message;

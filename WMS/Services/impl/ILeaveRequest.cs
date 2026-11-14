@@ -26,6 +26,7 @@ namespace WMS.Services.impl
 
         Task<CommonResponseModel<LeaveResponse>> XacNhanDon(XacNhanDonRequest req);
 
-        Task<CommonResponseModel<LeaveResponse>> RejectLeave(RejectLeaveRequets req); 
+        Task<CommonResponseModel<LeaveResponse>> RejectLeave(RejectLeaveRequets req);
+        Task<CommonResponseModel<LeaveResponse>> ApproveLeave(XacNhanDonRequest req);
     }
 }
