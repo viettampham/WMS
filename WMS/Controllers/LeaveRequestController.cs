@@ -47,8 +47,8 @@ namespace WMS.Controllers
         }
 
         [HttpGet("get-assigne-pending")]
-        public async Task<IActionResult> GetpendingAsignee(int currstp) { 
-            var res = await _leaveRequest.GetPendingAsigneeByCurrentStep(currstp);
+        public async Task<IActionResult> GetpendingAsignee(string  PhongBan) { 
+            var res = await _leaveRequest.GetPendingAsigneeByCurrentStep(PhongBan);
             return Ok(res);
         }
 

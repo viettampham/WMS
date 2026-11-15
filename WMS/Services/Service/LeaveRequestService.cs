@@ -333,26 +333,16 @@ namespace WMS.Services.Service
             }
         }
 
-        public async Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(int CurrentStep)
+        public async Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(string PhongBan)
         {
             CommonResponseModel<PendingAsignee> res = new CommonResponseModel<PendingAsignee>();
             try {
                 List<PendingAsignee> resu = new List<PendingAsignee>();
-                if (CurrentStep == 0 || CurrentStep == 1) // chưa đăng ký số || đăng ký số
+                resu = await _context.Users.Where(x => (x.RoleLevel == 4) && x.PhongBan == PhongBan).Select(x => new PendingAsignee()
                 {
-                    resu = await _context.Users.Where(x => x.RoleLevel == 4).Select(x=> new PendingAsignee() { 
-                        Code = x.CodeUser,
-                        Name = x.FullName
-                    }).ToListAsync(); // cấp giám sát
-                }
-                else if (CurrentStep == 2)  // đã phát hành
-                {
-                    resu = await _context.Users.Where(x => x.RoleLevel == 3).Select(x => new PendingAsignee()
-                    {
-                        Code = x.CodeUser,
-                        Name = x.FullName
-                    }).ToListAsync(); // cấp quản lý
-                }
+                    Code = x.CodeUser,
+                    Name = x.FullName
+                }).ToListAsync(); // cấp quản lý
 
                 res.Message = "Thành công";
                 res.Status = "SUCCESS";
@@ -624,6 +614,19 @@ namespace WMS.Services.Service
                 res.Status = "SUCCESS";
                 res.Data = resul;
                 return res;
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<ReportLeave>> ReportLeave(GetReportLeave req)
+        {
+            CommonResponseModel<ReportLeave> res = new CommonResponseModel<ReportLeave>();
+            try {
+
             }
             catch (Exception ex) {
                 res.Message = "Lỗi " + ex.Message;

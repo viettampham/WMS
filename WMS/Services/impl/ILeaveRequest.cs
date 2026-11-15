@@ -18,7 +18,7 @@ namespace WMS.Services.impl
 
         Task<CommonResponseModel<LeaveResponse>> PhatHanhDon(string Code);
 
-        Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(int CurrentStep);
+        Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(string PhongBan);
 
         Task<CommonResponseModel<PagingResponse<LeaveRequest>>> GetDSLeave(GetpaingLeaveRequets req);
 
@@ -28,5 +28,7 @@ namespace WMS.Services.impl
 
         Task<CommonResponseModel<LeaveResponse>> RejectLeave(RejectLeaveRequets req);
         Task<CommonResponseModel<LeaveResponse>> ApproveLeave(XacNhanDonRequest req);
+
+        Task<CommonResponseModel<ReportLeave>> ReportLeave(GetReportLeave req);
     }
 }
