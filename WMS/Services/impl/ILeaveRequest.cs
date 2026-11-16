@@ -30,5 +30,9 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<LeaveResponse>> ApproveLeave(XacNhanDonRequest req);
 
         Task<CommonResponseModel<ReportLeave>> ReportLeave(GetReportLeave req);
+
+        Task<byte[]> ExportReportLeave(GetReportLeave req);
+
+        Task<CommonResponseModel<LeaveResponse>> ManagerRejectLeave(RejectLeaveRequets req);
     }
 }

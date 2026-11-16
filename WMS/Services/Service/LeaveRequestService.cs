@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using System.Drawing;
 using System.Net.NetworkInformation;
 using WMS.Models;
 using WMS.Models.Request.LeaveRequest;
@@ -15,7 +17,8 @@ namespace WMS.Services.Service
         private readonly LienVietStorageContext _context;
         private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
-        public LeaveRequestService(LienVietStorageContext context, IMapper mapper, ICurrentUserService currentUserService) { 
+        public LeaveRequestService(LienVietStorageContext context, IMapper mapper, ICurrentUserService currentUserService)
+        {
             _context = context;
             _mapper = mapper;
             _currentUserService = currentUserService;
@@ -33,7 +36,7 @@ namespace WMS.Services.Service
             try
             {
                 int CurrentYear = DateTime.Now.Year;
-                int currentStt = await _context.LeaveRequests.Where(x=>x.CreateDate.Value.Year == CurrentYear).MaxAsync(x => x.Stt) ?? 0;
+                int currentStt = await _context.LeaveRequests.Where(x => x.CreateDate.Value.Year == CurrentYear).MaxAsync(x => x.Stt) ?? 0;
 
                 int stt = currentStt + 1;
 
@@ -55,7 +58,7 @@ namespace WMS.Services.Service
                 newi.Stt = stt;
                 newi.Message = "Phát hành đơn để cấp trên phê duyệt.";
                 newi.MessageNotice = "Đăng ký đơn nghỉ phép thành công";
-                newi.PendingAsigneeName = await _context.Users.Where(x=>x.CodeUser == req.PendingAsigneeCode).Select(x=>x.FullName).FirstOrDefaultAsync();
+                newi.PendingAsigneeName = await _context.Users.Where(x => x.CodeUser == req.PendingAsigneeCode).Select(x => x.FullName).FirstOrDefaultAsync();
                 newi.PendingAsigneeCode = req.PendingAsigneeCode;
 
                 await _context.LeaveRequests.AddAsync(newi);
@@ -146,7 +149,8 @@ namespace WMS.Services.Service
                 return res;
 
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -229,13 +233,15 @@ namespace WMS.Services.Service
 
                     return res;
                 }
-                else {
+                else
+                {
                     res.Message = "Không tồn tại người phê duyệt";
                     res.Status = "ERROR";
                     return res;
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -245,12 +251,13 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetLeave(GetLeaveRequest req)
         {
             CommonResponseModel<PagingResponse<LeaveResponse>> res = new CommonResponseModel<PagingResponse<LeaveResponse>>();
-            try {
+            try
+            {
                 var query = _context.LeaveRequests
-                    .Where(x=>(x.Code.Contains(req.Code) || req.Code == "") 
-                    && (x.Status == req.Status || req.Status == "") 
-                    && (x.Username == req.Username || req.Username == "")).OrderByDescending(x=>x.Id).AsQueryable();
-                
+                    .Where(x => (x.Code.Contains(req.Code) || req.Code == "")
+                    && (x.Status == req.Status || req.Status == "")
+                    && (x.Username == req.Username || req.Username == "")).OrderByDescending(x => x.Id).AsQueryable();
+
                 var totalRecords = query.Count();
 
                 var leave = await query
@@ -274,7 +281,8 @@ namespace WMS.Services.Service
 
                 return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -287,7 +295,8 @@ namespace WMS.Services.Service
             try
             {
                 LeaveRequest tar = await _context.LeaveRequests.Where(x => x.Code == Code).FirstOrDefaultAsync();
-                if (tar == null) {
+                if (tar == null)
+                {
                     res.Message = "Không tồn tại thông tin";
                     res.Status = "ERROR";
                     return res;
@@ -326,7 +335,8 @@ namespace WMS.Services.Service
                 res.Data = ds;
                 return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -336,7 +346,8 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(string PhongBan)
         {
             CommonResponseModel<PendingAsignee> res = new CommonResponseModel<PendingAsignee>();
-            try {
+            try
+            {
                 List<PendingAsignee> resu = new List<PendingAsignee>();
                 resu = await _context.Users.Where(x => (x.RoleLevel == 4) && x.PhongBan == PhongBan).Select(x => new PendingAsignee()
                 {
@@ -349,7 +360,8 @@ namespace WMS.Services.Service
                 res.ListData = resu;
                 return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -359,14 +371,16 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<LeaveType>> GetTypes()
         {
             CommonResponseModel<LeaveType> res = new CommonResponseModel<LeaveType>();
-            try {
+            try
+            {
                 List<LeaveType> lst = await _context.LeaveTypes.ToListAsync();
                 res.Message = "Lấy dữ liệu thành công";
                 res.Status = "SUCCESS";
                 res.ListData = lst;
                 return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -380,13 +394,15 @@ namespace WMS.Services.Service
             try
             {
                 LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == Code).FirstOrDefaultAsync();
-                if (tget == null) {
+                if (tget == null)
+                {
                     res.Message = "Không tồn tại đơn này";
                     res.Status = "ERROR";
                     return res;
                 }
 
-                if (tget.Status != "Đăng ký số") {
+                if (tget.Status != "Đăng ký số")
+                {
                     res.Message = "Phiếu đang không ở trạng thái đăng ký số";
                     res.Status = "ERROR";
                     return res;
@@ -427,7 +443,8 @@ namespace WMS.Services.Service
                 res.Data = resul;
                 return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -437,22 +454,25 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<LeaveResponse>> RejectLeave(RejectLeaveRequets req)
         {
             CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
-            try {
+            try
+            {
                 LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
-                if (tget == null) {
+                if (tget == null)
+                {
                     res.Message = "Không tồn tại thông tin đơn " + req.CodeLeave;
                     res.Status = "ERROR";
                     return res;
                 }
 
-                if (tget.Status != "Phát hành") {
+                if (tget.Status != "Phát hành")
+                {
                     res.Message = "Đơn đã phê duyệt hoặc chưa phát hành, kiểm tra lại";
                     res.Status = "WARNING";
                 }
 
-                tget.Status = "Đăng ký số";
+                tget.Status = "Từ chối";
                 tget.CurrentStep = 1;
-                tget.Message = "Đơn bị từ chối, phát hành lại";
+                tget.Message = "Đơn bị từ chối";
                 tget.MessageNotice = "Đơn bị cấp giám sát từ chối";
 
 
@@ -489,7 +509,8 @@ namespace WMS.Services.Service
 
                 return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -509,7 +530,8 @@ namespace WMS.Services.Service
                     return res;
                 }
 
-                if (tget.Status != "Phát hành") {
+                if (tget.Status != "Phát hành")
+                {
                     res.Message = "Phiếu nghỉ phép này đã được phê duyệt hoặc chưa phát hành";
                     res.Status = "WARNING";
                     return res;
@@ -540,7 +562,7 @@ namespace WMS.Services.Service
                 await _context.LogApproves.AddAsync(log);
                 await _context.SaveChangesAsync();
 
-               
+
 
                 LeaveResponse resul = new LeaveResponse();
                 resul = _mapper.Map<LeaveResponse>(tget);
@@ -556,7 +578,8 @@ namespace WMS.Services.Service
                 return res;
 
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -566,15 +589,18 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<LeaveResponse>> ApproveLeave(XacNhanDonRequest req)
         {
             CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
-            try {
+            try
+            {
                 LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
-                if (tget == null) {
+                if (tget == null)
+                {
                     res.Message = "Không tồn tại thông tin phiếu " + req.CodeLeave;
                     res.Status = "ERROR";
                     return res;
                 }
 
-                if (tget.Status != "Đã xác nhận") {
+                if (tget.Status != "Đã xác nhận")
+                {
                     res.Message = "Phiếu đã được phê duyệt hoặc chưa được xác nhận cấp quản lý";
                     res.Status = "WARNING";
                     return res;
@@ -615,7 +641,8 @@ namespace WMS.Services.Service
                 res.Data = resul;
                 return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
@@ -625,10 +652,362 @@ namespace WMS.Services.Service
         public async Task<CommonResponseModel<ReportLeave>> ReportLeave(GetReportLeave req)
         {
             CommonResponseModel<ReportLeave> res = new CommonResponseModel<ReportLeave>();
-            try {
+            try
+            {
+                DateTime frDate = Convert.ToDateTime(req.FromDate).Date;
+                DateTime toDate = Convert.ToDateTime(req.ToDate)
+                .Date
+                .AddDays(1)
+                .AddTicks(-1);
 
+                List<LeaveRequest> lst = await _context.LeaveRequests.Where(x => x.FromDate >= frDate && x.FromDate <= toDate).ToListAsync();
+                ReportLeave rsult = new ReportLeave();
+                rsult.TotalLeaves = lst.Where(x=>x.CurrentStep >= 2).Count();
+                rsult.LeaveApproveds = lst.Where(x => x.Status == "Đã phê duyệt").Count();
+                rsult.LeavePendings = lst.Where(x => x.Status == "Phát hành" || x.Status == "Đã xác nhận").Count();
+                rsult.LeaveRefuseds = lst.Where(x => x.Status == "Từ chối").Count();
+
+
+                var totalEmployeesByDept = await _context.Users
+                .GroupBy(x => x.PhongBan)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Count()
+                );
+
+
+                var userDepartments = await _context.Users
+                .ToDictionaryAsync(x => x.CodeUser, x => x.PhongBan);
+
+                List<ReportByDepart> rpDepartment = lst
+                    .Select(x => new
+                    {
+                        x.UserCode,
+                        PhongBan = userDepartments.GetValueOrDefault(x.UserCode, "Khác"),
+                        x.TotalDays,
+                        x.LeaveType
+                    })
+                    .GroupBy(x => x.PhongBan)
+                    .Select(g => new ReportByDepart
+                    {
+                        PhongBan = g.Key,
+                        TotalEmpl = totalEmployeesByDept.GetValueOrDefault(g.Key, 0),
+                        TotalLeave = g.Count(),
+                        TotalDayLeave = g.Sum(x => x.TotalDays),
+                        AnnualLeave = g.Where(x => x.LeaveType == "Nghỉ phép")
+                                       .Sum(x => x.TotalDays),
+                        UnpaidLeave = g.Where(x => x.LeaveType == "Nghỉ không lương")
+                                       .Sum(x => x.TotalDays),
+                        Percentleave = totalEmployeesByDept.GetValueOrDefault(g.Key, 0) == 0
+                        ? 0
+                        : g.Select(x => x.UserCode)
+                           .Distinct()
+                           .Count() * 100.0
+                           / totalEmployeesByDept.GetValueOrDefault(g.Key, 0)
+                    }).ToList();
+
+                rsult.ReportByDeparts = rpDepartment;
+
+                var users = await _context.Users
+                .ToDictionaryAsync(
+                    x => x.CodeUser,
+                    x => new
+                    {
+                        x.FullName,
+                        x.PhongBan
+                    });
+
+                List<TopLeaveEmpl> topLeaveEmpls = lst
+                .GroupBy(x => x.UserCode)
+                .Select(g =>
+                {
+                    var user = users.GetValueOrDefault(g.Key);
+
+                    return new TopLeaveEmpl
+                    {
+                        CodeEmpl = g.Key,
+                        FullName = user?.FullName ?? "",
+                        PhongBan = user?.PhongBan ?? "",
+                        TotalLeaves = g.Count(),
+                        TotalLeaveDays = g.Sum(x => x.TotalDays)
+                    };
+                })
+                .OrderByDescending(x => x.TotalLeaveDays)
+                .Take(10)
+                .ToList();
+
+                rsult.TopLeaveEmpls = topLeaveEmpls;
+
+
+                res.Message = "Lấy báo cáo nghỉ phép thành công";
+                res.Status = "SUCCESS";
+                res.Data = rsult;
+
+                return res;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<byte[]> ExportReportLeave(GetReportLeave req)
+        {
+            DateTime fromDate = Convert.ToDateTime(req.FromDate).Date;
+            DateTime toDate = Convert.ToDateTime(req.ToDate)
+                .Date
+                .AddDays(1)
+                .AddTicks(-1);
+
+            List<LeaveRequest> data = await _context.LeaveRequests
+                .Where(x => x.FromDate >= fromDate
+                         && x.FromDate <= toDate)
+                .OrderByDescending(x => x.CreateDate)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("BaoCaoNghiPhep");
+
+            // ==========================
+            // Tiêu đề báo cáo
+            // ==========================
+            var titleRange = ws.Range("A1:L1");
+            titleRange.Merge();
+
+            titleRange.Value = "BÁO CÁO NGHỈ PHÉP NHÂN SỰ";
+
+            titleRange.Style.Font.Bold = true;
+            titleRange.Style.Font.FontSize = 18;
+            titleRange.Style.Font.FontColor = XLColor.White;
+            titleRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#1E40AF");
+            titleRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            titleRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            ws.Row(1).Height = 28;
+
+            // ==========================
+            // Thông tin báo cáo
+            // ==========================
+            ws.Cell("A3").Value = $"Từ ngày";
+            ws.Cell("A4").Value = $"{fromDate:dd/MM/yyyy}";
+            ws.Cell("C3").Value = $"Đến ngày";
+            ws.Cell("C4").Value = $"{toDate:dd/MM/yyyy HH:mm}";
+
+            ws.Cell("E3").Value = $"Thời điểm xuất";
+            ws.Cell("E4").Value = $"{DateTime.Now:dd/MM/yyyy HH:mm}";
+
+            ws.Range("A3:L3").Style.Font.Bold = true;
+
+            // ==========================
+            // Thống kê nhanh
+            // ==========================
+            ws.Cell("G3").Value = "Tổng số đơn";
+            ws.Cell("G4").Value = data.Count;
+
+            ws.Cell("I3").Value = "Tổng số ngày nghỉ:";
+            ws.Cell("I4").Value = data.Sum(x => x.TotalDays);
+
+            ws.Range("A4:L4").Style.Font.Bold = true;
+            //ws.Range("A4:L4").Style.Fill.BackgroundColor =
+            //    XLColor.FromHtml("#F3F4F6");
+
+            //ws.Range("A5:L5").Style.Font.Bold = true;
+            //ws.Range("A5:L5").Style.Fill.BackgroundColor =
+            //    XLColor.FromHtml("#F3F4F6");
+
+            // ==========================
+            // Header bảng
+            // ==========================
+            int headerRow = 7;
+
+            ws.Cell(headerRow, 1).Value = "Mã NV";
+            ws.Cell(headerRow, 2).Value = "Họ tên";
+            ws.Cell(headerRow, 3).Value = "Loại nghỉ";
+            ws.Cell(headerRow, 4).Value = "Hình thức nghỉ";
+            ws.Cell(headerRow, 5).Value = "Từ ngày";
+            ws.Cell(headerRow, 6).Value = "Đến ngày";
+            ws.Cell(headerRow, 7).Value = "Số ngày";
+            ws.Cell(headerRow, 8).Value = "Lý do";
+            ws.Cell(headerRow, 9).Value = "Trạng thái";
+            ws.Cell(headerRow, 10).Value = "Thông tin";
+            ws.Cell(headerRow, 11).Value = "Pending";
+            ws.Cell(headerRow, 12).Value = "Ngày đăng ký";
+
+            var headerRange = ws.Range($"A{headerRow}:L{headerRow}");
+
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Font.FontColor = XLColor.White;
+            headerRange.Style.Fill.BackgroundColor =
+                XLColor.FromHtml("#2563EB");
+
+            headerRange.Style.Alignment.Horizontal =
+                XLAlignmentHorizontalValues.Center;
+
+            // ==========================
+            // Dữ liệu
+            // ==========================
+            int row = headerRow + 1;
+
+            foreach (var item in data)
+            {
+                ws.Cell(row, 1).Value = item.UserCode;
+                ws.Cell(row, 2).Value = item.Fullname;
+                ws.Cell(row, 3).Value = item.LeaveType;
+                ws.Cell(row, 4).Value = item.TypeShift;
+                ws.Cell(row, 5).Value = item.FromDate;
+                ws.Cell(row, 6).Value = item.ToDate;
+                ws.Cell(row, 7).Value = item.TotalDays;
+                ws.Cell(row, 8).Value = item.Reason;
+                ws.Cell(row, 9).Value = item.Status;
+                ws.Cell(row, 10).Value = item.Message;
+                ws.Cell(row, 11).Value = item.PendingAsigneeName;
+                ws.Cell(row, 12).Value = item.CreateDate;
+
+                ws.Cell(row, 5).Style.DateFormat.Format =
+                    "dd/MM/yyyy HH:mm";
+                ws.Cell(row, 6).Style.DateFormat.Format =
+                    "dd/MM/yyyy HH:mm";
+                ws.Cell(row, 12).Style.DateFormat.Format =
+                    "dd/MM/yyyy HH:mm";
+
+
+                // Tô màu trạng thái
+                var statusCell = ws.Cell(row, 9);
+
+                if (item.Status == "Đã phê duyệt" ||
+                    item.Status == "Hoàn thành")
+                {
+                    statusCell.Style.Font.FontColor = XLColor.Green;
+                    statusCell.Style.Font.Bold = true;
+                }
+                else if (item.Status == "Từ chối")
+                {
+                    statusCell.Style.Font.FontColor = XLColor.Red;
+                    statusCell.Style.Font.Bold = true;
+                }
+                else
+                {
+                    statusCell.Style.Font.FontColor = XLColor.Orange;
+                    statusCell.Style.Font.Bold = true;
+                }
+
+                // Màu xen kẽ
+                if (row % 2 == 0)
+                {
+                    ws.Range(row, 1, row, 6)
+                        .Style.Fill.BackgroundColor =
+                        XLColor.FromHtml("#F8FAFC");
+                }
+
+                row++;
+            }
+
+            // ==========================
+            // Border
+            // ==========================
+            var tableRange = ws.Range($"A{headerRow}:L{row - 1}");
+
+            tableRange.Style.Border.OutsideBorder =
+                XLBorderStyleValues.Thin;
+
+            tableRange.Style.Border.InsideBorder =
+                XLBorderStyleValues.Thin;
+
+            // ==========================
+            // Filter
+            // ==========================
+            tableRange.SetAutoFilter();
+
+            // ==========================
+            // Freeze Header
+            // ==========================
+            ws.SheetView.FreezeRows(headerRow);
+
+            // ==========================
+            // Căn lề
+            // ==========================
+            ws.Column(1).Style.Alignment.Horizontal =
+                XLAlignmentHorizontalValues.Center;
+
+            ws.Column(4).Style.Alignment.Horizontal =
+                XLAlignmentHorizontalValues.Center;
+
+            ws.Column(5).Style.Alignment.Horizontal =
+                XLAlignmentHorizontalValues.Center;
+
+            // ==========================
+            // Auto Width
+            // ==========================
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return stream.ToArray();
+        }
+
+        public async Task<CommonResponseModel<LeaveResponse>> ManagerRejectLeave(RejectLeaveRequets req)
+        {
+            CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
+            try
+            {
+                LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
+                if (tget == null)
+                {
+                    res.Message = "Không tồn tại thông tin đơn " + req.CodeLeave;
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                if (tget.Status != "Đã xác nhận")
+                {
+                    res.Message = "Đơn chưa được xác nhận hoặc đã phê duyệt thành công.";
+                    res.Status = "WARNING";
+                }
+
+                tget.Status = "Từ chối";
+                tget.CurrentStep = 1;
+                tget.Message = "Đơn bị từ chối";
+                tget.MessageNotice = "Đơn bị cấp quản lý từ chối";
+
+
+                User userLeave = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
+                //tget.PendingAsigneeCode = userLeave.CodeUser;
+                //tget.PendingAsigneeName = userLeave.FullName;
+
+                User userApprove = await _context.Users.Where(x => x.CodeUser == req.CodeReject).FirstOrDefaultAsync();
+
+                LogApprove log = new LogApprove
+                {
+                    LeaveRequestId = tget.Id,
+                    ApproverCode = userApprove.CodeUser,
+                    ApproverName = userApprove.FullName,
+                    Action = "Từ chối",
+                    Comment = req.ReasonReject,
+                    ActionTime = DateTime.Now
+                };
+
+                await _context.LogApproves.AddAsync(log);
+                await _context.SaveChangesAsync();
+
+
+                LeaveResponse resul = new LeaveResponse();
+                resul = _mapper.Map<LeaveResponse>(tget);
+                resul.PhongBan = userLeave.PhongBan;
+                resul.ChucVu = userLeave.RoleName;
+
+                resul.LstLog = await _context.LogApproves.Where(x => x.LeaveRequestId == tget.Id).ToListAsync();
+
+                res.Message = "Từ chối thành công đơn nghỉ phép";
+                res.Status = "SUCCESS";
+                res.Data = resul;
+
+                return res;
+            }
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;

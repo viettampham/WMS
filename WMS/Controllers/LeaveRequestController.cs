@@ -82,5 +82,28 @@ namespace WMS.Controllers
             var res = await _leaveRequest.ApproveLeave(req);
             return Ok(res);
         }
+
+        [HttpPost("report-leave")]
+        public async Task<IActionResult> ReportLeave(GetReportLeave req) {
+            var res = await _leaveRequest.ReportLeave(req);
+            return Ok(res);
+        }
+
+        [HttpPost("export-report-leave")]
+        public async Task<IActionResult> ExportReportLeave(GetReportLeave req)
+        {
+            var fileBytes = await _leaveRequest.ExportReportLeave(req);
+
+            return File(
+                fileBytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"BaoCaoNghiPhep_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+        [HttpPost("manager-reject-leave")]
+        public async Task<IActionResult> managerRejectleave(RejectLeaveRequets req) { 
+            var res = await _leaveRequest.ManagerRejectLeave(req);
+            return Ok(res);
+        }
     }
 }
