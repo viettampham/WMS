@@ -343,17 +343,29 @@ namespace WMS.Services.Service
             }
         }
 
-        public async Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(string PhongBan)
+        public async Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(string codeuser)
         {
             CommonResponseModel<PendingAsignee> res = new CommonResponseModel<PendingAsignee>();
             try
             {
                 List<PendingAsignee> resu = new List<PendingAsignee>();
-                resu = await _context.Users.Where(x => (x.RoleLevel == 4) && x.PhongBan == PhongBan).Select(x => new PendingAsignee()
+                User u = await _context.Users.Where(x => x.CodeUser == codeuser).FirstOrDefaultAsync();
+
+                if (u.RoleLevel >= 4)
                 {
-                    Code = x.CodeUser,
-                    Name = x.FullName
-                }).ToListAsync(); // cấp quản lý
+                    resu = await _context.Users.Where(x => (x.RoleLevel == u.RoleLevel - 1) && x.PhongBan == u.PhongBan).Select(x => new PendingAsignee()
+                    {
+                        Code = x.CodeUser,
+                        Name = x.FullName
+                    }).ToListAsync();
+                }
+                else if (u.RoleLevel == 3) {
+                    resu = await _context.Users.Where(x => (x.RoleLevel == 3) && x.PhongBan == "Phòng hành chính nhân sự").Select(x => new PendingAsignee()
+                    {
+                        Code = x.CodeUser,
+                        Name = x.FullName
+                    }).ToListAsync();
+                }
 
                 res.Message = "Thành công";
                 res.Status = "SUCCESS";
@@ -387,13 +399,13 @@ namespace WMS.Services.Service
             }
         }
 
-        public async Task<CommonResponseModel<LeaveResponse>> PhatHanhDon(string Code)
+        public async Task<CommonResponseModel<LeaveResponse>> PhatHanhDon(PhatHanhDon req)
         {
             CommonResponseModel<LeaveResponse> res = new CommonResponseModel<LeaveResponse>();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == Code).FirstOrDefaultAsync();
+                LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
                 if (tget == null)
                 {
                     res.Message = "Không tồn tại đơn này";
@@ -408,24 +420,103 @@ namespace WMS.Services.Service
                     return res;
                 }
 
-                tget.Status = "Phát hành";
-                tget.MessageNotice = "Phát hành đơn nghỉ phép thành công";
-                tget.Message = "Chờ cấp giám sát xác nhận";
-                tget.CurrentStep = 2;
+                User upl = await _context.Users.Where(x => x.CodeUser == req.CodeUserPhatHanh).FirstOrDefaultAsync();
+
+                if (upl.RoleLevel == 5)
+                {// nhân viên
+                    tget.Status = "Phát hành";
+                    tget.MessageNotice = "Phát hành đơn nghỉ phép thành công";
+                    tget.Message = "Chờ cấp giám sát xác nhận";
+                    tget.CurrentStep = 2;
+                }
+                else if (upl.RoleLevel == 4)
+                { // cấp giám sát
+                    tget.Status = "Đã xác nhận";
+                    tget.MessageNotice = "Đã xác nhận cấp giám sát";
+                    tget.Message = "Chờ cấp quản lý xác nhận";
+                    tget.CurrentStep = 3;
+                }
+                else if (upl.RoleLevel == 3)
+                {
+                    tget.Status = "Đã phê duyệt";
+                    tget.MessageNotice = "Hoàn thành";
+                    tget.Message = "Đã xác nhận cấp quản lý";
+                    tget.CurrentStep = 4;
+                }
 
                 await _context.SaveChangesAsync();
 
-                LogApprove log = new LogApprove
-                {
-                    LeaveRequestId = tget.Id,
-                    ApproverCode = tget.UserCode,
-                    ApproverName = tget.Fullname,
-                    Action = "Phát hành",
-                    Comment = "",
-                    ActionTime = DateTime.Now
-                };
+                List<LogApprove> lstLog = new List<LogApprove>();
+                if (upl.RoleLevel == 5) {
+                    LogApprove log = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = tget.UserCode,
+                        ApproverName = tget.Fullname,
+                        Action = "Phát hành",
+                        Comment = "",
+                        ActionTime = DateTime.Now
+                    };
+                    lstLog.Add(log);
+                } else if (upl.RoleLevel == 4) {
+                    LogApprove log = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = tget.UserCode,
+                        ApproverName = tget.Fullname,
+                        Action = "Phát hành",
+                        Comment = "",
+                        ActionTime = DateTime.Now
+                    };
 
-                await _context.LogApproves.AddAsync(log);
+                    LogApprove log2 = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = tget.UserCode,
+                        ApproverName = tget.Fullname,
+                        Action = "Đã xác nhận",
+                        Comment = "",
+                        ActionTime = DateTime.Now
+                    };
+                    lstLog.Add(log);
+                    lstLog.Add(log2);
+                }
+                else if (upl.RoleLevel == 3)
+                {
+                    LogApprove log = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = tget.UserCode,
+                        ApproverName = tget.Fullname,
+                        Action = "Phát hành",
+                        Comment = "",
+                        ActionTime = DateTime.Now
+                    };
+
+                    LogApprove log2 = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = tget.UserCode,
+                        ApproverName = tget.Fullname,
+                        Action = "Đã xác nhận",
+                        Comment = "",
+                        ActionTime = DateTime.Now
+                    };
+                    LogApprove log3 = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = tget.UserCode,
+                        ApproverName = tget.Fullname,
+                        Action = "Đã phê duyệt",
+                        Comment = "",
+                        ActionTime = DateTime.Now
+                    };
+                    lstLog.Add(log);
+                    lstLog.Add(log2);
+                    lstLog.Add(log3);
+                }
+
+                await _context.LogApproves.AddRangeAsync(lstLog);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -1008,6 +1099,35 @@ namespace WMS.Services.Service
             }
             catch (Exception ex)
             {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<InfoLeaveUser>> GetInfoLeaveUser(string codeuser)
+        {
+            CommonResponseModel<InfoLeaveUser> res = new CommonResponseModel<InfoLeaveUser>();
+            try {
+                User u = await _context.Users.Where(x => x.CodeUser == codeuser).FirstOrDefaultAsync();
+                if (u == null) {
+                    res.Message = "Không tồn tại thông tin người dùng " + codeuser;
+                    res.Status = "ERROR";
+                    return res;
+                }
+                InfoLeaveUser resul = new InfoLeaveUser() { 
+                    AnualLeave = u.AnualLeave,
+                    LeaveUsed = u.LeaveRequest,
+                    LeaveRemaining = u.AnualLeave - u.LeaveRequest
+                };
+
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.Data = resul;
+                return res;
+            }
+            catch (Exception ex) {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;

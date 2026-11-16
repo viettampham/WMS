@@ -338,6 +338,38 @@ namespace WMS.Services.Service
             string prefix = "LVLOG";
             return $"{prefix}{(number):D4}";
         }
+
+        public async Task<CommonResponseModel<string>> ChangePassword(ChangePasswordRequest req)
+        {
+            CommonResponseModel<string> res = new CommonResponseModel<string>();
+            try {
+                if (req.NewPass != req.ConfirmNewPass) {
+                    res.Message = "Xác nhận lại mật khẩu";
+                    res.Status = "WARNING";
+                    return res;
+                }
+                
+                User u = await _dbcontext.Users.Where(x => x.CodeUser == req.CodeUser).FirstOrDefaultAsync();
+                if (!VerifyPassword(req.CurrentPass, u.PasswordHash)) {
+                    res.Message = "Mật khẩu hiện tại không đúng";
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                u.PasswordHash = HashPassword(req.NewPass);
+                await _dbcontext.SaveChangesAsync();
+
+                res.Message = "Đổi mật khẩu thành công, hãy đăng nhập lại";
+                res.Status = "SUCCESS";
+                return res;
+
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
     }
 
 }

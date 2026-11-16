@@ -58,5 +58,11 @@ namespace WMS.Controllers
             var res = await _userService.GetPhongBan();
             return Ok(res);
         }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest req) {
+            var res = await _userService.ChangePassword(req);
+            return Ok(res);
+        }
     }
 }

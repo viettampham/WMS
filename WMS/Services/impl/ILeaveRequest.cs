@@ -16,9 +16,9 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<LeaveType>> GetTypes();
         Task<CommonResponseModel<LeaveResponse>> GetLeaveByCode(string Code);
 
-        Task<CommonResponseModel<LeaveResponse>> PhatHanhDon(string Code);
+        Task<CommonResponseModel<LeaveResponse>> PhatHanhDon(PhatHanhDon req);
 
-        Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(string PhongBan);
+        Task<CommonResponseModel<PendingAsignee>> GetPendingAsigneeByCurrentStep(string codeuser);
 
         Task<CommonResponseModel<PagingResponse<LeaveRequest>>> GetDSLeave(GetpaingLeaveRequets req);
 
@@ -34,5 +34,7 @@ namespace WMS.Services.impl
         Task<byte[]> ExportReportLeave(GetReportLeave req);
 
         Task<CommonResponseModel<LeaveResponse>> ManagerRejectLeave(RejectLeaveRequets req);
+
+        Task<CommonResponseModel<InfoLeaveUser>> GetInfoLeaveUser(string codeuser);
     }
 }

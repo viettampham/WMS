@@ -57,5 +57,9 @@ public partial class User
 
     public string? RoleName { get; set; }
 
+    public double? AnualLeave { get; set; }
+
+    public double? LeaveRequest { get; set; }
+
     public virtual Role RoleLevelNavigation { get; set; } = null!;
 }

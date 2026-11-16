@@ -16,5 +16,6 @@ namespace WMS.Services.impl
 
         Task<CommonResponseModel<RoleResponse>> GetRole();
         Task<CommonResponseModel<Department>> GetPhongBan();
+        Task<CommonResponseModel<string>> ChangePassword(ChangePasswordRequest req);
     }
 }

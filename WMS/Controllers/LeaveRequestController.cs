@@ -41,14 +41,14 @@ namespace WMS.Controllers
         }
 
         [HttpPost("phat-hanh-don")]
-        public async Task<IActionResult> PhatHanhDon(string code) { 
-            var res = await _leaveRequest.PhatHanhDon(code);
+        public async Task<IActionResult> PhatHanhDon(PhatHanhDon req) { 
+            var res = await _leaveRequest.PhatHanhDon(req);
             return Ok(res);
         }
 
         [HttpGet("get-assigne-pending")]
-        public async Task<IActionResult> GetpendingAsignee(string  PhongBan) { 
-            var res = await _leaveRequest.GetPendingAsigneeByCurrentStep(PhongBan);
+        public async Task<IActionResult> GetpendingAsignee(string codeuser) { 
+            var res = await _leaveRequest.GetPendingAsigneeByCurrentStep(codeuser);
             return Ok(res);
         }
 
@@ -103,6 +103,12 @@ namespace WMS.Controllers
         [HttpPost("manager-reject-leave")]
         public async Task<IActionResult> managerRejectleave(RejectLeaveRequets req) { 
             var res = await _leaveRequest.ManagerRejectLeave(req);
+            return Ok(res);
+        }
+
+        [HttpGet("get-infor-leave-user")]
+        public async Task<IActionResult> GetInforLeaveUser(string code) { 
+            var res = await _leaveRequest.GetInfoLeaveUser(code);
             return Ok(res);
         }
     }
