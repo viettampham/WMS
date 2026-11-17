@@ -16,9 +16,9 @@
         public string PhongBan { get; set; }
         public int TotalEmpl { get; set; }
         public int TotalLeave { get; set; }
-        public decimal? TotalDayLeave { get; set; }
-        public decimal? AnnualLeave { get; set; }
-        public decimal? UnpaidLeave { get; set; }
+        public double? TotalDayLeave { get; set; }
+        public double? AnnualLeave { get; set; }
+        public double? UnpaidLeave { get; set; }
         public double Percentleave { get; set; }
     }
 
@@ -27,6 +27,6 @@
         public string FullName { get; set; }
         public string PhongBan { get; set; }
         public int TotalLeaves { get; set; }
-        public decimal? TotalLeaveDays { get; set; }
+        public double? TotalLeaveDays { get; set; }
     }
 }

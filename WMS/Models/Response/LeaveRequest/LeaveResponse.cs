@@ -9,7 +9,7 @@
         public string LeaveType { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
-        public decimal? TotalDays { get; set; }
+        public double? TotalDays { get; set; }
         public string Reason { get; set; }
         public string Status { get; set; }
         public int? CurrentStep { get; set; }

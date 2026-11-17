@@ -372,6 +372,34 @@ namespace WMS.Services.Service
                 return res;
             }
         }
+
+        public async Task<CommonResponseModel<string>> ChangePasswordByAdmin(ChangePasswordByAdminRequest req)
+        {
+            CommonResponseModel<string> res = new CommonResponseModel<string>();
+            try {
+                User u = await _dbcontext.Users.Where(x => x.CodeUser == req.CodeUser).FirstOrDefaultAsync();
+                if (u == null) {
+                    res.Message = "Không tồn tại thông tin người dùng " + req.CodeUser;
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                u.PasswordHash = HashPassword(req.NewPass);
+                u.EditAt = DateTime.Now;
+                u.EditBy = _currentUserService.FullName;
+
+                await _dbcontext.SaveChangesAsync();
+
+                res.Message = "Đổi mật khẩu thành công";
+                res.Status = "SUCCESS";
+                return res;
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
     }
 
 }

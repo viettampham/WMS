@@ -19,7 +19,7 @@ public partial class LeaveRequest
 
     public DateTime? ToDate { get; set; }
 
-    public decimal? TotalDays { get; set; }
+    public double? TotalDays { get; set; }
 
     public string? Reason { get; set; }
 

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing;
 using Microsoft.EntityFrameworkCore;
 using System.Drawing;
 using System.Net.NetworkInformation;
@@ -35,6 +36,13 @@ namespace WMS.Services.Service
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                User u = await _context.Users.Where(x => x.CodeUser == req.CodeUser).FirstOrDefaultAsync();
+                if (u.AnualLeave - u.LeaveRequest < req.TotalDay && req.LeaveType == "Nghỉ phép") {
+                    res.Message = "Không còn đủ phép để đăng ký";
+                    res.Status = "WARNING";
+                    return res;
+                }
+
                 int CurrentYear = DateTime.Now.Year;
                 int currentStt = await _context.LeaveRequests.Where(x => x.CreateDate.Value.Year == CurrentYear).MaxAsync(x => x.Stt) ?? 0;
 
@@ -529,6 +537,9 @@ namespace WMS.Services.Service
                         Comment = "",
                         ActionTime = DateTime.Now
                     };
+                    tget.PendingAsigneeCode = "";
+                    tget.PendingAsigneeName = "";
+
                     lstLog.Add(log);
                     lstLog.Add(log2);
                     lstLog.Add(log3);
@@ -722,18 +733,8 @@ namespace WMS.Services.Service
                     }
                 }
 
-
-
-
-                tget.Status = "Đã phê duyệt";
-                tget.CurrentStep = 4;
-                tget.Message = "Hoàn thành";
-                tget.MessageNotice = "Đã phê duyệt cấp quản lý";
-                tget.PendingAsigneeCode = "";
-                tget.PendingAsigneeName = "";
-
                 User userleave = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
-                userleave.LeaveRequest += 1;
+                userleave.LeaveRequest += tget.TotalDays;
 
                 List<LogApprove> lstLog = new List<LogApprove>();
                 if (tget.Status == "Đã xác nhận")
@@ -772,6 +773,13 @@ namespace WMS.Services.Service
                     };
                     lstLog.Add(log);
                 }
+
+                tget.Status = "Đã phê duyệt";
+                tget.CurrentStep = 4;
+                tget.Message = "Hoàn thành";
+                tget.MessageNotice = "Đã phê duyệt cấp quản lý";
+                tget.PendingAsigneeCode = "";
+                tget.PendingAsigneeName = "";
 
                 await _context.LogApproves.AddRangeAsync(lstLog);
                 await _context.SaveChangesAsync();
@@ -1186,6 +1194,67 @@ namespace WMS.Services.Service
                 return res;
             }
             catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<ReceiveLeave>> GetCountMenuTiepNhan()
+        {
+            CommonResponseModel<ReceiveLeave> res = new CommonResponseModel<ReceiveLeave>();
+            try {
+                ReceiveLeave resu = new ReceiveLeave();
+                resu.CountReceive = await _context.LeaveRequests.Where(x => x.Status == "Hoàn thành").CountAsync();
+                resu.CountPending = await _context.LeaveRequests.Where(x => x.Status == "Đã phê duyệt").CountAsync();
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.Data = resu;
+
+                return res;
+            }
+            catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetListTiepNhan(GetTiepNhanRequest req)
+        {
+            CommonResponseModel<PagingResponse<LeaveResponse>> res = new CommonResponseModel<PagingResponse<LeaveResponse>>();
+            try
+            {
+                string sttus = req.status == "PENDING" ? "Đã phê duyệt" : "Hoàn thành";
+                var query = _context.LeaveRequests
+                    .Where(x => x.Status == sttus).OrderByDescending(x => x.Id).AsQueryable();
+
+                var totalRecords = query.Count();
+
+                var leave = await query
+                .Skip((req.PageIndex - 1) * req.PageSize)
+                .Take(req.PageSize)
+                .ToListAsync();
+
+                var data = _mapper.Map<List<LeaveResponse>>(leave);
+
+                var paging = new PagingResponse<LeaveResponse>
+                {
+                    Data = data,
+                    TotalRecords = totalRecords,
+                    PageIndex = req.PageIndex,
+                    PageSize = req.PageSize
+                };
+
+                res.Message = "Thành công";
+                res.Status = "SUCCESS";
+                res.Data = paging;
+
+                return res;
+            }
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;

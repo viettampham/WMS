@@ -64,5 +64,12 @@ namespace WMS.Controllers
             var res = await _userService.ChangePassword(req);
             return Ok(res);
         }
+
+        [HttpPost("change-password-by-admin")]
+        public async Task<IActionResult> ChangePasswordByAdmin(ChangePasswordByAdminRequest req)
+        {
+            var res = await _userService.ChangePasswordByAdmin(req);
+            return Ok(res);
+        }
     }
 }

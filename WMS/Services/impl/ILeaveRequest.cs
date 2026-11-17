@@ -36,5 +36,9 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<LeaveResponse>> ManagerRejectLeave(RejectLeaveRequets req);
 
         Task<CommonResponseModel<InfoLeaveUser>> GetInfoLeaveUser(string codeuser);
+
+        Task<CommonResponseModel<ReceiveLeave>> GetCountMenuTiepNhan();
+
+        Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetListTiepNhan(GetTiepNhanRequest req);
     }
 }

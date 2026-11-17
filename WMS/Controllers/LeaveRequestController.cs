@@ -111,5 +111,17 @@ namespace WMS.Controllers
             var res = await _leaveRequest.GetInfoLeaveUser(code);
             return Ok(res);
         }
+
+        [HttpGet("get-count-menu-tiep-nhan")]
+        public async Task<IActionResult> GetCountMenuTiepNhan() {
+            var res = await _leaveRequest.GetCountMenuTiepNhan();
+            return Ok(res);
+        }
+
+        [HttpPost("get-list-tiep-nhan")]
+        public async Task<IActionResult> GetListTiepNhan(GetTiepNhanRequest req) {
+            var res = await _leaveRequest.GetListTiepNhan(req);
+            return Ok(res);
+        }
     }
 }
