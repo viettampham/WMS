@@ -22,7 +22,7 @@ namespace WMS.Controllers
         }
 
         [HttpPost("add-user")]
-        public async Task<IActionResult> AddUser(AddUserRequest req) {
+        public async Task<IActionResult> AddUser([FromBody] AddUserRequest req) {
             var res = await _userService.AddUser(req);
             return Ok(res);
         }

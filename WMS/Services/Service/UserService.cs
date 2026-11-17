@@ -54,6 +54,7 @@ namespace WMS.Services.Service
                 nu.Status = true;
                 nu.FailedLoginAttempts = 0;
                 nu.RoleLevel = request.RoleLevel;
+                nu.RoleName = await _dbcontext.Roles.Where(x=>x.RoleLevel == request.RoleLevel).Select(x=>x.Note).FirstOrDefaultAsync();
                 nu.CreateAt = DateTime.Now;
                 nu.Cccd = request.CCCD;
                 nu.Gender = request.Gender;
@@ -243,6 +244,7 @@ namespace WMS.Services.Service
                 targetU.Gender = request.Gender;
                 targetU.Cccd = request.CCCD;
                 targetU.RoleLevel = request.RoleLevel;
+                targetU.RoleName = await _dbcontext.Roles.Where(x => x.RoleLevel == request.RoleLevel).Select(x => x.Note).FirstOrDefaultAsync();
                 targetU.PhongBan = request.PhongBan;
                 targetU.Status = request.TrangThai;
 

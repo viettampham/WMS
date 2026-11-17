@@ -176,11 +176,22 @@ namespace WMS.Services.Service
                     }
                     else if (tgu.RoleLevel <= 3)
                     {
-                        status = req.Status == "APPROVED"
-                        ? new[] { "Đã phê duyệt", "Hoàn thành" }
-                        : req.Status == "PENDING"
-                            ? new[] { "Đã xác nhận" }
-                            : new[] { "Đã phê duyệt", "Hoàn thành", "Đã xác nhận" };
+                        int CheckCapGs = await _context.Users.Where(x => x.RoleLevel == 4 && x.PhongBan == tgu.PhongBan).CountAsync();
+                        if (CheckCapGs == 0)
+                        {
+                            status = req.Status == "APPROVED"
+                            ? new[] { "Đã phê duyệt", "Hoàn thành" }
+                            : req.Status == "PENDING"
+                                ? new[] { "Đã xác nhận", "Phát hành" }
+                                : new[] { "Đã phê duyệt", "Hoàn thành", "Đã xác nhận" };
+                        }
+                        else {
+                            status = req.Status == "APPROVED"
+                            ? new[] { "Đã phê duyệt", "Hoàn thành" }
+                            : req.Status == "PENDING"
+                                ? new[] { "Đã xác nhận" }
+                                : new[] { "Đã phê duyệt", "Hoàn thành", "Đã xác nhận" };
+                        }
                     }
                     else
                     {
@@ -358,9 +369,16 @@ namespace WMS.Services.Service
                         Code = x.CodeUser,
                         Name = x.FullName
                     }).ToListAsync();
+                    if (resu.Count == 0) {
+                        resu = await _context.Users.Where(x => (x.RoleLevel == u.RoleLevel - 2) && x.PhongBan == u.PhongBan).Select(x => new PendingAsignee()
+                        {
+                            Code = x.CodeUser,
+                            Name = x.FullName
+                        }).ToListAsync();
+                    }
                 }
                 else if (u.RoleLevel == 3) {
-                    resu = await _context.Users.Where(x => (x.RoleLevel == 3) && x.PhongBan == "Phòng hành chính nhân sự").Select(x => new PendingAsignee()
+                    resu = await _context.Users.Where(x => (x.RoleLevel == 3) && x.PhongBan == "Hành chính nhân sự").Select(x => new PendingAsignee()
                     {
                         Code = x.CodeUser,
                         Name = x.FullName
@@ -689,13 +707,23 @@ namespace WMS.Services.Service
                     res.Status = "ERROR";
                     return res;
                 }
+                User approver = await _context.Users.Where(x => x.CodeUser == req.CodeApprover).FirstOrDefaultAsync();
 
-                if (tget.Status != "Đã xác nhận")
+
+                int CheckCapGS = await _context.Users.Where(x => x.PhongBan == approver.PhongBan && x.RoleLevel == 4).CountAsync();
+
+                if (CheckCapGS != 0)
                 {
-                    res.Message = "Phiếu đã được phê duyệt hoặc chưa được xác nhận cấp quản lý";
-                    res.Status = "WARNING";
-                    return res;
+                    if (tget.Status != "Đã xác nhận")
+                    {
+                        res.Message = "Phiếu đã được phê duyệt hoặc chưa được xác nhận cấp giám sát";
+                        res.Status = "WARNING";
+                        return res;
+                    }
                 }
+
+
+
 
                 tget.Status = "Đã phê duyệt";
                 tget.CurrentStep = 4;
@@ -704,18 +732,48 @@ namespace WMS.Services.Service
                 tget.PendingAsigneeCode = "";
                 tget.PendingAsigneeName = "";
 
-                User approver = await _context.Users.Where(x => x.CodeUser == req.CodeApprover).FirstOrDefaultAsync();
-                LogApprove log = new LogApprove
-                {
-                    LeaveRequestId = tget.Id,
-                    ApproverCode = approver.CodeUser,
-                    ApproverName = approver.FullName,
-                    Action = "Phê duyệt",
-                    Comment = "Phê duyệt nghỉ phép",
-                    ActionTime = DateTime.Now
-                };
+                User userleave = await _context.Users.Where(x => x.CodeUser == tget.UserCode).FirstOrDefaultAsync();
+                userleave.LeaveRequest += 1;
 
-                await _context.LogApproves.AddAsync(log);
+                List<LogApprove> lstLog = new List<LogApprove>();
+                if (tget.Status == "Đã xác nhận")
+                {
+                    LogApprove log = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = approver.CodeUser,
+                        ApproverName = approver.FullName,
+                        Action = "Phê duyệt",
+                        Comment = "Phê duyệt nghỉ phép",
+                        ActionTime = DateTime.Now
+                    };
+                    lstLog.Add(log);
+                }
+                else {
+                    LogApprove log1 = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = approver.CodeUser,
+                        ApproverName = approver.FullName,
+                        Action = "Xác nhận",
+                        Comment = "Xác nhận nghỉ phép",
+                        ActionTime = DateTime.Now
+                    };
+                    lstLog.Add(log1);
+
+                    LogApprove log = new LogApprove
+                    {
+                        LeaveRequestId = tget.Id,
+                        ApproverCode = approver.CodeUser,
+                        ApproverName = approver.FullName,
+                        Action = "Phê duyệt",
+                        Comment = "Phê duyệt nghỉ phép",
+                        ActionTime = DateTime.Now
+                    };
+                    lstLog.Add(log);
+                }
+
+                await _context.LogApproves.AddRangeAsync(lstLog);
                 await _context.SaveChangesAsync();
 
                 LeaveResponse resul = new LeaveResponse();
