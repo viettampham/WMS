@@ -1205,7 +1205,7 @@ namespace WMS.Services.Service
             CommonResponseModel<ReceiveLeave> res = new CommonResponseModel<ReceiveLeave>();
             try {
                 ReceiveLeave resu = new ReceiveLeave();
-                resu.CountReceive = await _context.LeaveRequests.Where(x => x.Status == "Hoàn thành").CountAsync();
+                resu.CountReceive = await _context.LeaveRequests.Where(x => x.Status == "Đã tiếp nhận").CountAsync();
                 resu.CountPending = await _context.LeaveRequests.Where(x => x.Status == "Đã phê duyệt").CountAsync();
 
                 res.Message = "Thành công";
@@ -1226,7 +1226,7 @@ namespace WMS.Services.Service
             CommonResponseModel<PagingResponse<LeaveResponse>> res = new CommonResponseModel<PagingResponse<LeaveResponse>>();
             try
             {
-                string sttus = req.status == "PENDING" ? "Đã phê duyệt" : "Hoàn thành";
+                string sttus = req.status == "PENDING" ? "Đã phê duyệt" : "Đã tiếp nhận";
                 var query = _context.LeaveRequests
                     .Where(x => x.Status == sttus).OrderByDescending(x => x.Id).AsQueryable();
 
@@ -1255,6 +1255,48 @@ namespace WMS.Services.Service
             }
             catch (Exception ex)
             {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<string>> TiepNhanDon(TiepNhanDonRequest req)
+        {
+            CommonResponseModel<string> res = new CommonResponseModel<string>();
+            try
+            {
+                LeaveRequest tget = await _context.LeaveRequests.Where(x => x.Code == req.CodeLeave).FirstOrDefaultAsync();
+                if (tget == null) {
+                    res.Message = "Không tồn tại đơn nghỉ phép";
+                    res.Status = "ERROR";
+                    return res;
+                }
+
+                tget.Status = "Đã tiếp nhận";
+                tget.CurrentStep = 5;
+                tget.Message = "Bộ phận hành chính đã tiếp nhận đơn";
+
+                User u = await _context.Users.Where(x => x.CodeUser == req.CodeUserTiepNhan).FirstOrDefaultAsync();
+
+                LogApprove log = new LogApprove
+                {
+                    LeaveRequestId = tget.Id,
+                    ApproverCode = req.CodeUserTiepNhan,
+                    ApproverName = u.FullName,
+                    Action = "Tiếp nhận đơn",
+                    Comment = "Bộ phận hành chính đã tiếp nhận đơn",
+                    ActionTime = DateTime.Now
+                };
+
+                await _context.LogApproves.AddAsync(log);
+                await _context.SaveChangesAsync();
+
+                res.Message = "Tiếp nhận đơn thành công";
+                res.Status = "SUCCESS";
+                return res;
+            }
+            catch (Exception ex) {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;

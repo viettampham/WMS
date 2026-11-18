@@ -40,5 +40,7 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<ReceiveLeave>> GetCountMenuTiepNhan();
 
         Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetListTiepNhan(GetTiepNhanRequest req);
+
+        Task<CommonResponseModel<string>> TiepNhanDon(TiepNhanDonRequest req);
     }
 }

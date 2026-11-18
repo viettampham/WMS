@@ -123,5 +123,11 @@ namespace WMS.Controllers
             var res = await _leaveRequest.GetListTiepNhan(req);
             return Ok(res);
         }
+
+        [HttpPost("tiep-nhan-don")]
+        public async Task<IActionResult> TiepNhanDon(TiepNhanDonRequest req) {
+            var res = await _leaveRequest.TiepNhanDon(req);
+            return Ok(res);
+        }
     }
 }
