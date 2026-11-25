@@ -6,10 +6,6 @@ namespace WMS.Models;
 
 public partial class LienVietStorageContext : DbContext
 {
-    public LienVietStorageContext()
-    {
-    }
-
     public LienVietStorageContext(DbContextOptions<LienVietStorageContext> options)
         : base(options)
     {
@@ -46,9 +42,6 @@ public partial class LienVietStorageContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Server=localhost;Database=LienVietStorage;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -248,6 +241,8 @@ public partial class LienVietStorageContext : DbContext
             entity.Property(e => e.CreateBy).HasMaxLength(50);
             entity.Property(e => e.DeleteAt).HasColumnType("datetime");
             entity.Property(e => e.DeleteBy).HasMaxLength(50);
+            entity.Property(e => e.DirectManagerCode).HasMaxLength(10);
+            entity.Property(e => e.DirectManagerName).HasMaxLength(50);
             entity.Property(e => e.EditAt).HasColumnType("datetime");
             entity.Property(e => e.EditBy).HasMaxLength(50);
             entity.Property(e => e.Email).HasMaxLength(50);

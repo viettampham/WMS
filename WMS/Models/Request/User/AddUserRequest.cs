@@ -14,5 +14,6 @@
         public int RoleLevel { get; set; }
         public string CCCD { get; set; }
         public string PhongBan { get; set; }
+        public string DirectManager { get; set; }
     }
 }

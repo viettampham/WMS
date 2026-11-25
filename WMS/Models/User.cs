@@ -61,5 +61,9 @@ public partial class User
 
     public double? LeaveRequest { get; set; }
 
+    public string? DirectManagerName { get; set; }
+
+    public string? DirectManagerCode { get; set; }
+
     public virtual Role RoleLevelNavigation { get; set; } = null!;
 }

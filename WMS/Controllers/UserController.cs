@@ -71,5 +71,11 @@ namespace WMS.Controllers
             var res = await _userService.ChangePasswordByAdmin(req);
             return Ok(res);
         }
+
+        [HttpPost("get-manager-direct")]
+        public async Task<IActionResult> GetDirectmanager(GetQuanLyTrucTiepRequets req) {
+            var res = await _userService.GetQuanLyTT(req);
+            return Ok(res);
+        }
     }
 }

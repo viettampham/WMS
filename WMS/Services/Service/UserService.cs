@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using Azure.Core;
 using BCrypt.Net;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using WMS.Models;
+using WMS.Models.Enum;
 using WMS.Models.Request.User;
 using WMS.Models.Response.Common;
 using WMS.Models.Response.Role;
@@ -299,7 +301,8 @@ namespace WMS.Services.Service
                 List<RoleResponse> lst = await _dbcontext.Roles.Select(x => new RoleResponse{ 
                     Id = x.Id,
                     RoleLevel = x.RoleLevel,
-                    RoleName = x.RoleName
+                    RoleName = x.RoleName,
+                    Note = x.Note
                 }).ToListAsync();
 
                 res.Message = "Thành công";
@@ -395,6 +398,35 @@ namespace WMS.Services.Service
                 return res;
             }
             catch (Exception ex) {
+                res.Message = "Lỗi " + ex.Message;
+                res.Status = "ERROR";
+                return res;
+            }
+        }
+
+        public async Task<CommonResponseModel<UserResponseModal>> GetQuanLyTT(GetQuanLyTrucTiepRequets req)
+        {
+            CommonResponseModel<UserResponseModal> res = new CommonResponseModel<UserResponseModal>();
+            try
+            {
+                List<User> lstU = new List<User>();
+                if ((ERoleUser)req.UserRoleLevel == ERoleUser.User)
+                {
+                    lstU = await _dbcontext.Users.Where(x => x.PhongBan == req.PhongBan && (x.RoleLevel == (int)ERoleUser.Supervisor || x.RoleLevel == (int)ERoleUser.Manager)).ToListAsync();
+                }
+                else if((ERoleUser)req.UserRoleLevel == ERoleUser.Supervisor) {
+                    lstU = await _dbcontext.Users.Where(x => x.PhongBan == req.PhongBan && x.RoleLevel == (int)ERoleUser.Manager).ToListAsync();
+                }
+
+                List<UserResponseModal> resu = _mapper.Map<List<UserResponseModal>>(lstU);
+
+                res.Message = "Lấy danh sách quản lý trực tiếp thành công";
+                res.Status = "SUCCESS";
+                res.ListData = resu;
+                return res;
+            }
+            catch (Exception ex)
+            {
                 res.Message = "Lỗi " + ex.Message;
                 res.Status = "ERROR";
                 return res;
