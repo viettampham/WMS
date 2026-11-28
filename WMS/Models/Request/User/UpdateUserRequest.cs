@@ -15,5 +15,6 @@
         public string PhongBan { get; set; }
         public bool TrangThai { get; set; }
         public int RoleLevel { get; set; }
+        public string? DirectManagerCode { get; set; }
     }
 }

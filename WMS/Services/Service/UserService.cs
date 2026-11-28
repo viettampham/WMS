@@ -61,6 +61,8 @@ namespace WMS.Services.Service
                 nu.Cccd = request.CCCD;
                 nu.Gender = request.Gender;
                 nu.PhongBan = request.PhongBan;
+                nu.DirectManagerCode = request.DirectManagerCode;
+                nu.DirectManagerName = await _dbcontext.Users.Where(x => x.CodeUser == request.DirectManagerCode).Select(x => x.FullName).FirstOrDefaultAsync();
                 int maxStt = await _dbcontext.Users.MaxAsync(x => (int?)x.Stt) ?? 0;
                 nu.CodeUser = GenerateNextCode(maxStt);
                 nu.Stt = maxStt + 1;
@@ -99,6 +101,11 @@ namespace WMS.Services.Service
                 .Skip((req.PageIndex - 1) * req.PageSize)
                 .Take(req.PageSize)
                 .ToListAsync();
+
+                var user = users.FirstOrDefault();
+
+                Console.WriteLine($"Name: {user?.DirectManagerName}");
+                Console.WriteLine($"Code: {user?.DirectManagerCode}");
 
                 var data = _mapper.Map<List<UserResponseModal>>(users);
 
@@ -210,6 +217,7 @@ namespace WMS.Services.Service
                 new Claim("ChucVu", chucvu),
                 new Claim("PhoneNumber", nhanvien.PhoneNumber),
                 new Claim("Email", nhanvien.Email),
+                new Claim("DirectManagerCode", nhanvien.DirectManagerCode ?? ""),
                 new Claim("RoleLevel", nhanvien.RoleLevel.ToString()?? ""),
                 new Claim(ClaimTypes.Role, roleName ?? "")
             };
@@ -249,6 +257,8 @@ namespace WMS.Services.Service
                 targetU.RoleName = await _dbcontext.Roles.Where(x => x.RoleLevel == request.RoleLevel).Select(x => x.Note).FirstOrDefaultAsync();
                 targetU.PhongBan = request.PhongBan;
                 targetU.Status = request.TrangThai;
+                targetU.DirectManagerCode = request.DirectManagerCode;
+                targetU.DirectManagerName = await _dbcontext.Users.Where(x => x.CodeUser == request.DirectManagerCode).Select(x => x.FullName).FirstOrDefaultAsync();
 
                 targetU.EditAt = DateTime.Now;
                 targetU.EditBy = _currentUserService.UserName;

@@ -42,5 +42,7 @@ namespace WMS.Services.impl
         Task<CommonResponseModel<PagingResponse<LeaveResponse>>> GetListTiepNhan(GetTiepNhanRequest req);
 
         Task<CommonResponseModel<string>> TiepNhanDon(TiepNhanDonRequest req);
+
+        Task<byte[]> ExportDonNghiPhepToWord(string codeleave);
     }
 }

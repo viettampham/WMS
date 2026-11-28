@@ -25,7 +25,8 @@
         public string CCCD { get; set; }
         public string PhongBan { get; set; }
         public string CodeUser { get; set; }
-
+        public string? DirectManagerName { get; set; }
+        public string? DirectManagerCode { get; set; }
     }
 
 
